@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTRPC } from "@/trpc/client";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -28,19 +28,23 @@ const poppins = Poppins({
   weight: ["700"],
 });
 
-export const SingUpView = () => {
+export const SignUpView = () => {
+  const router = useRouter();
 
-    const router = useRouter();
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
 
-    const trpc = useTRPC();
-    const register = useMutation(trpc.auth.register.mutationOptions({
-        onError: (error) => {
-            toast.error(error.message);
-        },
-        onSuccess: () => {
-            router.push("/");
-        }
-    }));
+  const register = useMutation(
+    trpc.auth.register.mutationOptions({
+      onError: (error) => {
+        toast.error(error.message);
+      },
+      onSuccess: async () => {
+        await queryClient.invalidateQueries(trpc.auth.session.queryFilter());
+        router.push("/");
+      },
+    })
+  );
 
   const form = useForm<z.infer<typeof registerSchema>>({
     mode: "all",
@@ -53,10 +57,10 @@ export const SingUpView = () => {
   });
 
   const onSubmit = (values: z.infer<typeof registerSchema>) => {
-    register.mutate(values)
+    register.mutate(values);
   };
 
-  const username = form.watch("username")
+  const username = form.watch("username");
   const usernameErrors = form.formState.errors.username;
 
   const showPreview = username && !usernameErrors;
@@ -99,11 +103,13 @@ export const SingUpView = () => {
                   <FormControl>
                     <Input {...field} />
                   </FormControl>
-                  <FormDescription className={cn("hidden", showPreview && "block")}>
+                  <FormDescription
+                    className={cn("hidden", showPreview && "block")}
+                  >
                     Your store will be available at&nbsp;
                     <strong>{username}</strong>
                   </FormDescription>
-                  <FormMessage/>
+                  <FormMessage />
                 </FormItem>
               )}
             />
@@ -115,7 +121,7 @@ export const SingUpView = () => {
                   <FormControl>
                     <Input {...field} />
                   </FormControl>
-                  <FormMessage/>
+                  <FormMessage />
                 </FormItem>
               )}
             />
@@ -125,14 +131,20 @@ export const SingUpView = () => {
                 <FormItem>
                   <FormLabel className="text-base">Password</FormLabel>
                   <FormControl>
-                    <Input {...field} type="password"/>
+                    <Input {...field} type="password" />
                   </FormControl>
-                  <FormMessage/>
+                  <FormMessage />
                 </FormItem>
               )}
             />
-            <Button disabled={register.isPending} type="submit" size="lg" variant="elevated" className="bg-black text-white hover:bg-pink-400 hover:text-primary">
-                Create account
+            <Button
+              disabled={register.isPending}
+              type="submit"
+              size="lg"
+              variant="elevated"
+              className="bg-black text-white hover:bg-pink-400 hover:text-primary"
+            >
+              Create account
             </Button>
           </form>
         </Form>
