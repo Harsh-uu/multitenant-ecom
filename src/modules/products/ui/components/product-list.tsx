@@ -82,5 +82,5 @@ export const ProductListSkeleton = () => {
         <ProductCardSkeleton key={index}/>
       ))}
     </div>
-  );
+  );w
 };
