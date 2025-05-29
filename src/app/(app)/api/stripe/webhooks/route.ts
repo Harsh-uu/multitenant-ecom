@@ -12,7 +12,7 @@ export async function POST(req: Request) {
     event = stripe.webhooks.constructEvent(
       await (await req.blob()).text(),
       req.headers.get("stripe-signature") as string,
-      process.env.STRIPE_WEBHOOK_SECRET as string
+      process.env.STRIPE_WEBHOOK_SECRET as string,
     );
   } catch (error) {
     const errorMessage =
@@ -70,8 +70,7 @@ export async function POST(req: Request) {
             throw new Error("No line items found");
           }
 
-          const lineItems = expandedSession.line_items
-            .data as ExpandedLineItem[];
+          const lineItems = expandedSession.line_items.data as ExpandedLineItem[];
 
           for (const item of lineItems) {
             await payload.create({
