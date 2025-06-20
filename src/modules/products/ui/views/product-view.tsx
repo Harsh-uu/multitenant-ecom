@@ -12,6 +12,7 @@ import Link from "next/link";
 import { Fragment, useState } from "react";
 import dynamic from "next/dynamic";
 import { toast } from "sonner";
+import {RichText} from "@payloadcms/richtext-lexical/react"
 
 const CartButton = dynamic(
   () => import("../components/cart-button").then((mod) => mod.CartButton),
@@ -31,7 +32,7 @@ interface ProductViewProps {
 }
 
 export const ProductView = ({ productId, tenantSlug }: ProductViewProps) => {
-  const[isCopied, setIsCopied] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
   const trpc = useTRPC();
   const { data } = useSuspenseQuery(
     trpc.products.getOne.queryOptions({ id: productId })
@@ -105,7 +106,7 @@ export const ProductView = ({ productId, tenantSlug }: ProductViewProps) => {
 
             <div className="p-6">
               {data.description ? (
-                <p>{data.description}</p>
+                <RichText data={data.description}/>
               ) : (
                 <p className="font-medium text-muted-foreground italic">
                   No description provided
@@ -137,7 +138,7 @@ export const ProductView = ({ productId, tenantSlug }: ProductViewProps) => {
                     }}
                     disabled={isCopied}
                   >
-                    {isCopied ? <CheckIcon/> : <LinkIcon />}
+                    {isCopied ? <CheckIcon /> : <LinkIcon />}
                   </Button>
                 </div>
 
@@ -164,14 +165,36 @@ export const ProductView = ({ productId, tenantSlug }: ProductViewProps) => {
                       <div className="font-medium">
                         {stars} {stars === 1 ? "star" : "stars"}
                       </div>
-                      <Progress value={data.ratingDistribution[stars]} className="h-[1lh]" />
-                      <div className="font-medium">{data.ratingDistribution[stars]}%</div>
+                      <Progress
+                        value={data.ratingDistribution[stars]}
+                        className="h-[1lh]"
+                      />
+                      <div className="font-medium">
+                        {data.ratingDistribution[stars]}%
+                      </div>
                     </Fragment>
                   ))}
                 </div>
               </div>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export const ProductViewSkeleton = () => {
+  return (
+    <div className="px-4 lg:px-12 py-18">
+      <div className="border rounded-sm bg-white overflow-hidden">
+        <div className="relative aspect-[3.9] border-b">
+          <Image
+            src={"/placeholder.png"}
+            alt="Placeholder"
+            fill
+            className="object-cover"
+          />
         </div>
       </div>
     </div>

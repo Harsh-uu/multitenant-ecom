@@ -11,6 +11,7 @@ import { TRPCError } from "@trpc/server";
 import type Stripe from "stripe";
 import { CheckoutMetadata, ProductMetadata } from "../types";
 import { stripe } from "@/lib/stripe";
+import { isSuperAdmin } from "@/lib/access";
 
 export const checkoutRouter = createTRPCRouter({
   verify: protectedProcedure.mutation(async ({ ctx }) => {
@@ -78,6 +79,11 @@ export const checkoutRouter = createTRPCRouter({
                 equals: input.tenantSlug,
               },
             },
+            {
+              isArchived: {
+                not_equals: true,
+              }
+            }
           ],
         },
       });
@@ -98,23 +104,28 @@ export const checkoutRouter = createTRPCRouter({
         },
       });
 
-      const tenant = tenantsData.docs[0];
-
-      if (!tenant) {
+      const tenant = tenantsData.docs[0];      if (!tenant) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Tenant not found",
         });
       }
 
-      if (!tenant.stripeDetailsSubmitted) {
+      // Check if user is superadmin - if so, bypass stripe verification
+      const currentUser = await ctx.db.findByID({
+        collection: "users",
+        id: ctx.session.user.id,
+        depth: 0,
+      });
+
+      const isUserSuperAdmin = isSuperAdmin(currentUser);
+
+      if (!tenant.stripeDetailsSubmitted && !isUserSuperAdmin) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Tenant not allowed to sell products",
         });
-      }
-
-      const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] =
+      }      const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] =
         products.docs.map((product) => ({
           quantity: 1,
           price_data: {
@@ -140,7 +151,8 @@ export const checkoutRouter = createTRPCRouter({
           totalAmount * (PLATFORM_FEE_PERCENTAGE / 100)
         );
 
-      const checkout = await stripe.checkout.sessions.create({
+      // Create different checkout sessions for superadmin vs regular users
+      const checkoutConfig: Stripe.Checkout.SessionCreateParams = {
         customer_email: ctx.session.user.email,
         success_url: `${process.env.NEXT_PUBLIC_APP_URL}/tenants/${input.tenantSlug}/checkout?success=true`,
         cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/tenants/${input.tenantSlug}/checkout?cancel=true`,
@@ -152,12 +164,24 @@ export const checkoutRouter = createTRPCRouter({
         metadata: {
           userId: ctx.session.user.id,
         } as CheckoutMetadata,
-        payment_intent_data: {
-          application_fee_amount: platformFeeAmount,
-        }
-      }, {
-        stripeAccount: tenant.stripeAccountID,
-      });
+      };
+
+      let checkout: Stripe.Checkout.Session;
+
+      if (isUserSuperAdmin) {
+        // For superadmin, create a regular checkout session without connecting to tenant's Stripe account
+        checkout = await stripe.checkout.sessions.create(checkoutConfig);
+      } else {
+        // For regular users, create checkout with connected account and platform fee
+        checkout = await stripe.checkout.sessions.create({
+          ...checkoutConfig,
+          payment_intent_data: {
+            application_fee_amount: platformFeeAmount,
+          }
+        }, {
+          stripeAccount: tenant.stripeAccountID,
+        });
+      }
 
       if (!checkout.url) {
         throw new TRPCError({
@@ -179,9 +203,18 @@ export const checkoutRouter = createTRPCRouter({
         collection: "products",
         depth: 2, // Populate "category" & "image"
         where: {
-          id: {
-            in: input.ids,
-          },
+          and: [
+            {
+              id: {
+                in: input.ids,
+              },
+            },
+            {
+              isArchived: {
+                not_equals: true,
+              },
+            },
+          ]
         },
       });
 
