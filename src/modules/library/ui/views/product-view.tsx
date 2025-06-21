@@ -2,12 +2,10 @@
 
 import { ArrowLeftIcon } from "lucide-react";
 import Link from "next/link";
-import { ProductList } from "../components/product-list";
-import { Suspense } from "react";
-import { ProductCardSkeleton } from "../components/product-card";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useTRPC } from "@/trpc/client";
 import { ReviewSidebar } from "../components/review-sidebar";
+import { RichText } from "@payloadcms/richtext-lexical/react";
 
 interface Props {
   productId: string;
@@ -39,10 +37,10 @@ export const ProductView = ({ productId }: Props) => {
             <div className="p-4 bg-white rounded-md border gap-4">
               <ReviewSidebar productId={productId} />
             </div>
-          </div>
+          </div>{" "}
           <div className="lg:col-span-5">
             {data.content ? (
-              <p>{data.content}</p>
+              <RichText data={data.content} />
             ) : (
               <p className="font-medium italic text-muted-foreground">
                 No special content

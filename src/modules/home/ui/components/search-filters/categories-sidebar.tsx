@@ -12,6 +12,9 @@ import { useTRPC } from "@/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { CategoriesGetManyOutput } from "@/modules/categories/types";
 
+type CategoryItem = CategoriesGetManyOutput[number];
+type SubcategoryItem = CategoryItem['subcategories'][number];
+
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -23,9 +26,9 @@ export const CategoriesSidebar = ({ open, onOpenChange }: Props) => {
 
   const router = useRouter();
   const [parentCategories, setParentCategories] =
-    useState<CategoriesGetManyOutput | null>(null);
+    useState<SubcategoryItem[] | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<
-    CategoriesGetManyOutput[1] | null
+    CategoryItem | null
   >(null);
 
   const currentCategories = parentCategories ?? data ?? [];
@@ -34,12 +37,11 @@ export const CategoriesSidebar = ({ open, onOpenChange }: Props) => {
     setSelectedCategory(null);
     setParentCategories(null);
     onOpenChange(open);
-  };
-
-  const handleCategoryClick = (category: CategoriesGetManyOutput[1]) => {
-    if (category.subcategories && category.subcategories.length > 0) {
-      setParentCategories(category.subcategories as CategoriesGetManyOutput);
-      setSelectedCategory(category);
+  };  const handleCategoryClick = (category: CategoryItem | SubcategoryItem) => {
+    // Check if this is a top-level category with subcategories
+    if ('subcategories' in category && category.subcategories && category.subcategories.length > 0) {
+      setParentCategories(category.subcategories);
+      setSelectedCategory(category as CategoryItem);
     } else {
       if (parentCategories && selectedCategory) {
         router.push(`/${selectedCategory.slug}/${category.slug}`);

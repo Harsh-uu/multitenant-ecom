@@ -30,7 +30,7 @@ export const productsRouter = createTRPCRouter({
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Product not found",
-        })
+        });
       }
 
       let isPurchased = false;
@@ -67,7 +67,6 @@ export const productsRouter = createTRPCRouter({
             equals: input.id,
           },
         },
-        
       });
 
       const reviewRating =
@@ -121,7 +120,10 @@ export const productsRouter = createTRPCRouter({
         minPrice: z.string().nullable().optional(),
         maxPrice: z.string().nullable().optional(),
         tags: z.array(z.string()).nullable().optional(),
-        sort: z.enum(sortValues).nullable().optional(),
+        sort: z
+          .enum(sortValues as [string, ...string[]])
+          .nullable()
+          .optional(),
         tenantSlug: z.string().nullable().optional(),
       })
     )
@@ -129,7 +131,7 @@ export const productsRouter = createTRPCRouter({
       const where: Where = {
         isArchived: {
           not_equals: true,
-        }
+        },
       };
       let sort: Sort = "-createdAt";
 
@@ -165,7 +167,7 @@ export const productsRouter = createTRPCRouter({
       } else {
         where["isPrivate"] = {
           not_equals: true,
-        }
+        };
       }
 
       if (input.category) {
