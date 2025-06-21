@@ -6,6 +6,7 @@ import config from "@payload-config";
 import { ExpandedLineItem } from "@/modules/checkout/types";
 
 export async function POST(req: Request) {
+  console.log("🔔 Webhook received!");
   let event: Stripe.Event;
 
   try {
@@ -18,10 +19,7 @@ export async function POST(req: Request) {
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error";
 
-    if (error! instanceof Error) {
-      console.log(error);
-    }
-
+    console.log("❌ Webhook signature verification failed:", error);
     console.log(`❌ Error message: ${errorMessage}`);
     return NextResponse.json(
       { message: `Webhook Error: ${errorMessage}` },
@@ -46,10 +44,16 @@ export async function POST(req: Request) {
         case "checkout.session.completed":
           data = event.data.object as Stripe.Checkout.Session;
 
+          console.log(`🛒 Processing checkout.session.completed event`);
+          console.log(`   Session ID: ${data.id}`);
+          console.log(
+            `   Event account: ${event.account || "null (direct payment - superadmin)"}`
+          );
+          console.log(`   User ID from metadata: ${data.metadata?.userId}`);
+
           if (!data.metadata?.userId) {
             throw new Error("User ID is required");
           }
-
           const user = await payload.findByID({
             collection: "users",
             id: data.metadata.userId,
@@ -59,41 +63,52 @@ export async function POST(req: Request) {
             throw new Error("User not found");
           }
 
+          console.log(
+            `   Found user: ${user.email} (Roles: ${user.roles?.join(", ") || "none"})`
+          );
+
           const expandedSession = await stripe.checkout.sessions.retrieve(
             data.id,
             {
               expand: ["line_items.data.price.product"],
             },
-            {
-              stripeAccount: event.account,
-            }
+            // Only pass stripeAccount if event.account exists (for connected accounts)
+            event.account ? { stripeAccount: event.account } : {}
           );
 
+          console.log(
+            `   Retrieved expanded session with ${expandedSession.line_items?.data?.length || 0} line items`
+          );
           if (
             !expandedSession.line_items?.data ||
             !expandedSession.line_items.data.length
           ) {
             throw new Error("No line items found");
-          }          const lineItems = expandedSession.line_items
+          }
+          const lineItems = expandedSession.line_items
             .data as ExpandedLineItem[];
 
-          console.log(`Creating ${lineItems.length} orders for user ${user.id}`);
+          console.log(
+            `📦 Creating ${lineItems.length} orders for user ${user.email}`
+          );
 
           for (const item of lineItems) {
-            console.log(`Creating order for product: ${item.price.product.metadata.id}`);
-            
+            console.log(
+              `   📝 Creating order for product: ${item.price.product.metadata.id} (${item.price.product.name})`
+            );
+
             const order = await payload.create({
               collection: "orders",
               data: {
                 stripeCheckoutSessionId: data.id,
-                stripeAccountId: event.account,
+                stripeAccountId: event.account || null,
                 user: user.id,
                 product: item.price.product.metadata.id,
                 name: item.price.product.name,
               },
             });
-            
-            console.log(`Order created successfully: ${order.id}`);
+
+            console.log(`   ✅ Order created successfully: ${order.id}`);
           }
           break;
 
@@ -126,4 +141,12 @@ export async function POST(req: Request) {
   }
 
   return NextResponse.json({ message: "Received" }, { status: 200 });
+}
+
+// Add a GET endpoint to test webhook connectivity
+export async function GET() {
+  return NextResponse.json({
+    message: "Webhook endpoint is working",
+    timestamp: new Date().toISOString(),
+  });
 }
