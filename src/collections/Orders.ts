@@ -4,8 +4,27 @@ import type { CollectionConfig } from "payload";
 export const Orders: CollectionConfig = {
   slug: "orders",
   access: {
-    read: ({ req }) => isSuperAdmin(req.user),
-    create: ({ req }) => isSuperAdmin(req.user),
+    read: ({ req }) => {
+      // Superadmins can read all orders
+      if (isSuperAdmin(req.user)) return true;
+      
+      // Regular users can only read their own orders
+      if (req.user) {
+        return {
+          user: {
+            equals: req.user.id,
+          },
+        };
+      }
+      
+      return false;
+    },
+    create: ({ req }) => {
+      // Allow webhook creation (no user in webhook context)
+      if (!req.user) return true;
+      // Allow superadmins to create orders manually
+      return isSuperAdmin(req.user);
+    },
     update: ({ req }) => isSuperAdmin(req.user),
     delete: ({ req }) => isSuperAdmin(req.user),
   },

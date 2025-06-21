@@ -74,13 +74,15 @@ export async function POST(req: Request) {
             !expandedSession.line_items.data.length
           ) {
             throw new Error("No line items found");
-          }
-
-          const lineItems = expandedSession.line_items
+          }          const lineItems = expandedSession.line_items
             .data as ExpandedLineItem[];
 
+          console.log(`Creating ${lineItems.length} orders for user ${user.id}`);
+
           for (const item of lineItems) {
-            await payload.create({
+            console.log(`Creating order for product: ${item.price.product.metadata.id}`);
+            
+            const order = await payload.create({
               collection: "orders",
               data: {
                 stripeCheckoutSessionId: data.id,
@@ -90,6 +92,8 @@ export async function POST(req: Request) {
                 name: item.price.product.name,
               },
             });
+            
+            console.log(`Order created successfully: ${order.id}`);
           }
           break;
 

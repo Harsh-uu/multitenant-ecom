@@ -61,8 +61,9 @@ export const libraryRouter = createTRPCRouter({
         cursor: z.number().default(1),
         limit: z.number().default(DEFAULT_LIMIT),
       })
-    )
-    .query(async ({ ctx, input }) => {
+    )    .query(async ({ ctx, input }) => {
+      console.log(`Fetching orders for user: ${ctx.session.user.id}`);
+      
       const ordersData = await ctx.db.find({
         collection: "orders",
         depth: 0, // Populate "category" & "image"
@@ -75,7 +76,10 @@ export const libraryRouter = createTRPCRouter({
         }
       });
 
+      console.log(`Found ${ordersData.totalDocs} orders for user ${ctx.session.user.id}`);
+
       const productIds = ordersData.docs.map((order) => order.product);
+      console.log(`Product IDs from orders: ${productIds.join(', ')}`);
 
       const productsData = await ctx.db.find({
         collection: "products",
