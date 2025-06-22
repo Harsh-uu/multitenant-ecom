@@ -12,9 +12,6 @@ const dmSans = DM_Sans({
 export const metadata: Metadata = {
   title: "funroad",
   description: "Multitenant E-Commerce Website",
-  icons: {
-    icon: "/favicon.ico",
-  },
 };
 
 export default function RootLayout({
