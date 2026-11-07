@@ -41,7 +41,7 @@ export const ProductList = () => {
           .flatMap((page) => page.docs)
           .map((product, index) => (
             <ProductCard
-              priority={index < 4}
+              priority={index < 3}
               key={product.id}
               id={product.id}
               name={product.name}

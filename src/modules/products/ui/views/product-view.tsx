@@ -51,7 +51,8 @@ export const ProductView = ({ productId, tenantSlug }: ProductViewProps) => {
               fill
               className="object-cover"
               sizes="(max-width: 1024px) 100vw, 66vw"
-              priority
+              preload
+              fetchPriority="high"
             />
             {data.image?.credit?.name && (
               // Photographer credit, required for Unsplash photos.

@@ -21,11 +21,11 @@ export const LibraryView = () => {
                 <p className="text-sm text-muted-foreground">Your purchases and reviews</p>
             </div>
         </header>
-        <section className="max-w-(--breakpoint-xl) mx-auto px-4 lg:px-12 py-10">
+        <main className="max-w-(--breakpoint-xl) mx-auto px-4 lg:px-12 py-10">
             <Suspense fallback={<ProductListSkeleton/>}>
             <ProductList/>
             </Suspense>
-        </section>
+        </main>
     </div>
     )
 }

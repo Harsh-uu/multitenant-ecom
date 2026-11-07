@@ -47,7 +47,9 @@ export const ProductCard = ({
             src={imageUrl || "/placeholder.png"}
             className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
             sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, (max-width: 1536px) 33vw, 25vw"
-            priority={priority}
+            preload={priority}
+            fetchPriority={priority ? "high" : undefined}
+            loading={priority ? "eager" : undefined}
           />
         </div>
         <div className="flex flex-1 flex-col gap-3 p-4">

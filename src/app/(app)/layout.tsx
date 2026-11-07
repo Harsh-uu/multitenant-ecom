@@ -13,6 +13,8 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   subsets: ["latin"],
   variable: "--font-geist-mono",
+  // Only used for prices; don't let it compete with images on first load.
+  preload: false,
 });
 
 export const metadata: Metadata = {
