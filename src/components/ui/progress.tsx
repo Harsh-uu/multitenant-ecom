@@ -19,6 +19,7 @@ function Progress({
         "border bg-white",
         className
       )}
+      value={value}
       {...props}
     >
       <ProgressPrimitive.Indicator

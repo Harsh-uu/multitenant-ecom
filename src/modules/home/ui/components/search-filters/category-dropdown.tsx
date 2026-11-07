@@ -39,6 +39,7 @@ export const CategoryDropdown = ({
     >
       <div className="relative">
         <Button
+          asChild
           variant="elevated"
           className={cn(
             "h-11 px-4 bg-transparent border-transparent rounded-full hover:bg-white hover:border-primary text-black",

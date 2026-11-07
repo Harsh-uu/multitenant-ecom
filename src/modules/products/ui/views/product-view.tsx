@@ -72,7 +72,7 @@ export const ProductView = ({ productId, tenantSlug }: ProductViewProps) => {
                   {data.tenant.image?.url && (
                     <Image
                       src={data.tenant.image.url}
-                      alt={data.tenant.name}
+                      alt=""
                       width={20}
                       height={20}
                       className="rounded-full border shrink-0 size-[20px]"
@@ -129,6 +129,7 @@ export const ProductView = ({ productId, tenantSlug }: ProductViewProps) => {
                   <Button
                     className="size-12"
                     variant="elevated"
+                    aria-label="Copy product link"
                     onClick={() => {
                       setIsCopied(true);
                       navigator.clipboard.writeText(window.location.href);
@@ -153,7 +154,7 @@ export const ProductView = ({ productId, tenantSlug }: ProductViewProps) => {
 
               <div className="p-6">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-medium">Ratings</h3>
+                  <h2 className="text-xl font-medium">Ratings</h2>
                   <div className="flex items-center gap-x-1 font-medium">
                     <StarIcon className="size-4 fill-black" />
                     <p>({data.reviewRating})</p>
@@ -168,6 +169,7 @@ export const ProductView = ({ productId, tenantSlug }: ProductViewProps) => {
                         {stars} {stars === 1 ? "star" : "stars"}
                       </div>
                       <Progress
+                        aria-label={`${stars} star ratings`}
                         value={data.ratingDistribution[stars]}
                         className="h-[1lh]"
                       />

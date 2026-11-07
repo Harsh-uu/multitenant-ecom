@@ -41,7 +41,7 @@ export const ProductCard = ({
           <div className="flex items-center gap-2">
             {tenantImageUrl && (
               <Image
-                alt={tenantSlug}
+                alt=""
                 src={tenantImageUrl}
                 width={16}
                 height={16}

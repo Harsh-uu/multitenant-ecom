@@ -127,7 +127,7 @@
     @apply flex flex-col gap-3 text-base leading-relaxed;
   }
   .rich-text h2 {
-    @apply text-2xl font-medium mt-2;
+    @apply text-xl font-medium mt-2;
   }
   .rich-text h3 {
     @apply text-lg font-medium mt-2;
