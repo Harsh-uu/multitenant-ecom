@@ -19,10 +19,18 @@ export const CheckoutButton = ({
   if (hideIfEmpty && totalItems === 0) return null;
 
   return (
-    <Button variant="elevated" asChild className={cn("bg-white", className)}>
-      <Link href={`${generateTenantURL(tenantSlug)}/checkout`}>
+    <Button variant="secondary" size="sm" asChild className={cn(className)}>
+      <Link
+        href={`${generateTenantURL(tenantSlug)}/checkout`}
+        aria-label={`Cart, ${totalItems} ${totalItems === 1 ? "item" : "items"}`}
+      >
         <ShoppingCartIcon />
-        {totalItems > 0 ? totalItems : ""}
+        Cart
+        {totalItems > 0 && (
+          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-foreground px-1.5 font-mono text-[11px] text-background">
+            {totalItems}
+          </span>
+        )}
       </Link>
     </Button>
   );

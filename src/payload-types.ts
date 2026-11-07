@@ -178,7 +178,7 @@ export interface Tenant {
    */
   name: string;
   /**
-   * This is the subdomain for the store (e.g. [slug].funroad.com
+   * This is the subdomain for the store (e.g. [slug].shelf.com
    */
   slug: string;
   image?: (string | null) | Media;
@@ -201,6 +201,25 @@ export interface Media {
   id: string;
   tenant?: (string | null) | Tenant;
   alt: string;
+  /**
+   * Use a hosted image instead of uploading a file
+   */
+  externalUrl?: string | null;
+  credit?: {
+    /**
+     * Photographer
+     */
+    name?: string | null;
+    /**
+     * Photographer profile link
+     */
+    url?: string | null;
+    /**
+     * e.g. Unsplash
+     */
+    source?: string | null;
+    sourceUrl?: string | null;
+  };
   _objectKey?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -474,6 +493,15 @@ export interface UsersSelect<T extends boolean = true> {
 export interface MediaSelect<T extends boolean = true> {
   tenant?: T;
   alt?: T;
+  externalUrl?: T;
+  credit?:
+    | T
+    | {
+        name?: T;
+        url?: T;
+        source?: T;
+        sourceUrl?: T;
+      };
   _objectKey?: T;
   updatedAt?: T;
   createdAt?: T;

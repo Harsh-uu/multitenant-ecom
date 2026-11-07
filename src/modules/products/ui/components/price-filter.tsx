@@ -39,13 +39,13 @@ export const PriceFilter = ({minPrice, maxPrice, onMinPriceChange, onMaxPriceCha
         onMaxPriceChange(numericValue);
     }
     return(
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-3">
             <div className="flex flex-col gap-2">
-                <Label className="font-medium text-base">Minimum Price</Label>
+                <Label className="text-xs font-normal text-muted-foreground">Minimum price</Label>
                 <Input type="text" placeholder="$0" value={minPrice ? formatAsCurrecy(minPrice): ""} onChange={handleMinPriceChange}></Input>
             </div>
             <div className="flex flex-col gap-2">
-                <Label className="font-medium text-base">Maximum Price</Label>
+                <Label className="text-xs font-normal text-muted-foreground">Maximum price</Label>
                 <Input type="text" placeholder="∞" value={maxPrice ? formatAsCurrecy(maxPrice): ""} onChange={handleMaxPriceChange}></Input>
             </div>
         </div>

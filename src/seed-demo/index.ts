@@ -12,7 +12,9 @@ import { getPayload, type Payload, type Where } from "payload";
 import config from "@payload-config";
 
 import { stripe } from "../lib/stripe";
-import { abstractAvatar, abstractCover, avatar, type PaletteName } from "./art";
+
+import { avatar } from "./art";
+import { PRODUCT_PHOTOS, photoSrc, type DemoPhoto } from "./photos";
 import {
   BUYERS,
   DEMO_EMAIL_DOMAIN,
@@ -58,14 +60,48 @@ async function inBatches<T, R>(items: T[], size: number, fn: (item: T) => Promis
   return out;
 }
 
-async function uploadImage(payload: Payload, data: Buffer, name: string, alt: string, tenant: string) {
+async function uploadImage(
+  payload: Payload, data: Buffer, name: string, alt: string, tenant: string,
+  opts: { mimetype?: string; ext?: string; credit?: object } = {}
+) {
+  const { mimetype = "image/webp", ext = "webp", credit } = opts;
   // A content hash in the filename gives new artwork a new URL, so image
   // optimizer, CDN and browser caches never serve a previous version.
   const version = createHash("sha1").update(data).digest("hex").slice(0, 8);
   return payload.create({
     collection: "media",
-    data: { alt, tenant } as never,
-    file: { data, mimetype: "image/webp", name: `${name}-${version}.webp`, size: data.length },
+    data: { alt, tenant, credit } as never,
+    file: { data, mimetype, name: `${name}-${version}.${ext}`, size: data.length },
+  });
+}
+
+async function download(url: string) {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`${res.status}`);
+      return Buffer.from(await res.arrayBuffer());
+    } catch (e) {
+      if (attempt >= 4) throw new Error(`Download failed for ${url}: ${(e as Error).message}`);
+      await new Promise((r) => setTimeout(r, 1000 * attempt));
+    }
+  }
+}
+
+/** Uploads a demo photo (Unsplash License) with photographer credit. */
+async function photoImage(payload: Payload, photo: DemoPhoto, alt: string, tenant: string, square = false) {
+  const data = await download(square ? photoSrc(photo, 400, 400) : photoSrc(photo, 1600, 1200));
+  const slug = alt.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const utm = "utm_source=shelf&utm_medium=referral";
+  return uploadImage(payload, data, slug, alt, tenant, {
+    mimetype: "image/jpeg",
+    ext: "jpg",
+    credit: {
+      name: photo.photographer,
+      url: `${photo.photoUrl}?${utm}`,
+      source: "Unsplash",
+      sourceUrl: `https://unsplash.com/?${utm}`,
+    },
   });
 }
 
@@ -75,22 +111,22 @@ async function createStripeAccount() {
 }
 
 async function createAccount(payload: Payload, opts: {
-  username: string; displayName: string; initials: string; palette?: PaletteName;
+  username: string; displayName: string; initials: string; logo?: DemoPhoto;
 }) {
   const stripeAccountID = await createStripeAccount();
   const tenant = await payload.create({
     collection: "tenants",
     data: { name: opts.displayName, slug: opts.username, stripeAccountID },
   });
-  const image = await uploadImage(
-    payload,
-    opts.palette
-      ? await abstractAvatar(opts.username, opts.palette, opts.displayName[0]!.toUpperCase())
-      : await avatar({ initials: opts.initials, color: "#F4F4F0" }),
-    `avatar-${opts.username}`,
-    `${opts.displayName} avatar`,
-    tenant.id
-  );
+  const image = opts.logo
+    ? await photoImage(payload, opts.logo, `${opts.displayName} logo`, tenant.id, true)
+    : await uploadImage(
+        payload,
+        await avatar({ initials: opts.initials, color: "#F2F2F2" }),
+        `avatar-${opts.username}`,
+        `${opts.displayName} avatar`,
+        tenant.id
+      );
   await payload.update({ collection: "tenants", id: tenant.id, data: { image: image.id } });
   const user = await payload.create({
     collection: "users",
@@ -168,6 +204,13 @@ async function seedDemo() {
     console.log("Gave the admin store a real Stripe test account");
   }
 
+  const missing = STORES.flatMap((st) => st.products)
+    .filter((p) => !PRODUCT_PHOTOS[p.name])
+    .map((p) => p.name);
+  if (missing.length) {
+    throw new Error(`No photo listed in photos.ts for: ${missing.join(", ")}`);
+  }
+
   await cleanup(payload);
 
   const categories = await payload.find({
@@ -190,7 +233,8 @@ async function seedDemo() {
     const { tenant, user } = await createAccount(payload, {
       username: store.slug,
       displayName: store.name,
-      palette: store.palette,
+      // Each store's logo is its first product's photo, cropped square.
+      logo: PRODUCT_PHOTOS[store.products[0]!.name],
       initials: `${store.owner.first[0]}${store.owner.last[0]}`,
     });
     // Sellers on a real deployment finish Stripe onboarding themselves; demo
@@ -202,18 +246,11 @@ async function seedDemo() {
     return { store, tenant, slug: store.slug, user };
   });
 
-  // Generate and upload every product cover up front (in parallel)...
+  // Create every product's cover image record up front (in parallel)...
   const listings = sellers.flatMap((s) => s.store.products.map((p) => ({ ...s, p })));
   const coverIds = new Map<string, string>();
-  await inBatches(listings, 6, async ({ store, tenant, p }) => {
-    const data = await abstractCover(`product:${p.name}`, store.palette);
-    const cover = await uploadImage(
-      payload,
-      data,
-      `${store.slug}-${p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
-      p.name,
-      tenant.id
-    );
+  await inBatches(listings, 6, async ({ tenant, p }) => {
+    const cover = await photoImage(payload, PRODUCT_PHOTOS[p.name]!, p.name, tenant.id);
     coverIds.set(p.name, cover.id);
   });
 

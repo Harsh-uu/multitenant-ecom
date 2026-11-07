@@ -22,7 +22,7 @@ export const StarPicker = ({className, disabled, onChange, value=0}: StarPickerP
         <div className={cn("flex items-center", disabled && "opacity-50 cursor-not-allowed", className)}>
             {[1, 2, 3, 4, 5].map((star) => (
                 <button key={star} type="button" disabled={disabled} className={cn("p-0.5 hover:scale-110 transition", disabled && "cursor-pointer")} onClick={() => handleChange(star)} onMouseEnter={() => setHoverValue(star)} onMouseLeave={() => setHoverValue(0)}>
-                    <StarIcon className={cn("size-5", (hoverValue || value) >= star ? "fill-black stroke-black" : "stroke-black")}/>
+                    <StarIcon className={cn("size-5", (hoverValue || value) >= star ? "fill-foreground stroke-foreground" : "stroke-[#c9c9c9]")}/>
                 </button>
             ))}
         </div>

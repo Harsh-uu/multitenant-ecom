@@ -2,8 +2,8 @@ import { ProductListSkeleton } from "@/modules/library/ui/components/product-lis
 
 export default function Loading() {
   return (
-    <div className="max-w-(--breakpoint-xl) mx-auto px-4 lg:px-12 py-10">
+    <div className="min-h-screen bg-subtle"><div className="max-w-(--breakpoint-xl) mx-auto px-4 lg:px-12 py-10">
       <ProductListSkeleton />
-    </div>
+    </div></div>
   );
 }

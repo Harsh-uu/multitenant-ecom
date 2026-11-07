@@ -1,5 +1,5 @@
 import { cn, formatCurrency } from "@/lib/utils";
-import Image from "next/image";
+import Image from "@/components/media-image";
 import Link from "next/link";
 
 interface CheckoutItemProps {
@@ -26,36 +26,38 @@ export const CheckoutItem = ({
   return (
     <div
       className={cn(
-        "grid grid-cols-[8.5rem_1fr_auto] gap-4 pr-4 border-b",
+        "flex items-center gap-4 border-b p-4",
         isLast && "border-b-0"
       )}
     >
-      <div className="overflow-hidden border-r">
-        <div className="relative aspect-square h-full">
-          <Image
-            src={imageUrl || "/placeholder.png"}
-            alt={name}
-            fill
-            className="object-cover"
-            sizes="120px"
-          />
-        </div>
+      <div className="relative size-20 shrink-0 overflow-hidden rounded-lg bg-muted">
+        <Image
+          src={imageUrl || "/placeholder.png"}
+          alt={name}
+          fill
+          className="object-cover"
+          sizes="80px"
+        />
       </div>
 
-      <div className="py-4 flex flex-col justify-between">
-        <div>
-          <Link href={productUrl}>
-            <h4 className="font-bold underline">{name}</h4>
-          </Link>
-          <Link href={tenantUrl}>
-            <p className="font-medium underline">{tenantName}</p>
-          </Link>
-        </div>
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <Link href={productUrl} className="truncate text-sm font-medium hover:underline underline-offset-4">
+          {name}
+        </Link>
+        <Link href={tenantUrl} className="truncate text-sm text-muted-foreground hover:text-foreground">
+          {tenantName}
+        </Link>
       </div>
 
-      <div className="py-4 flex flex-col justify-between">
-        <p className="font-medium">{formatCurrency(price)}</p>
-        <button className="underline font-medium cursor-pointer" onClick={onRemove} type="button">Remove</button>
+      <div className="flex flex-col items-end gap-1">
+        <p className="font-mono text-sm font-medium">{formatCurrency(price)}</p>
+        <button
+          className="cursor-pointer text-sm text-muted-foreground hover:text-foreground"
+          onClick={onRemove}
+          type="button"
+        >
+          Remove
+        </button>
       </div>
     </div>
   );

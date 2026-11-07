@@ -29,28 +29,31 @@ export const SearchInput = ({ disabled, defaultValue, onChange }: Props) => {
   }, [searchValue, onChange]);
 
   return (
-    <div className="flex item-center gap-2 w-full">
+    <div className="flex items-center gap-2 w-full">
       <CategoriesSidebar open={isSidebarOpen} onOpenChange={setIsSidebarOpen} />
       <div className="relative w-full ">
-        <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-neutral-500" />
+        <SearchIcon className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
         <Input
-          className="pl-8"
-          placeholder="Search Products"
+          className="pl-9"
+          type="search"
+          aria-label="Search products"
+          placeholder="Search products…"
           disabled={disabled}
           value={searchValue}
           onChange={(e) => setSearchValue(e.target.value)}
         />
       </div>
       <Button
-        variant="elevated"
-        className="shrink-0 size-12 flex lg:hidden"
+        variant="secondary"
+        size="icon"
+        className="shrink-0 flex lg:hidden"
         aria-label="Browse categories"
         onClick={() => setIsSidebarOpen(true)}
       >
         <ListFilterIcon />
       </Button>
       {session.data?.user && (
-        <Button asChild variant="elevated">
+        <Button asChild variant="secondary" className="hidden lg:inline-flex">
           <Link prefetch href="/library">
             <BookmarkCheckIcon />
             Library

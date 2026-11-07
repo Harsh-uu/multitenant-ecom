@@ -44,10 +44,10 @@ export const TagsFilter = ({ onChange, value }: TagsFilterProps) => {
           page.docs.map((tag) => (
             <div
               key={tag.id}
-              className="flex items-center justify-between cursor-pointer"
+              className="flex items-center justify-between cursor-pointer rounded-md py-1 text-sm text-muted-foreground hover:text-foreground"
               onClick={() => onClick(tag.name)}
             >
-              <p className="font-medium">{tag.name}</p>
+              <p>{tag.name}</p>
               <Checkbox checked={value?.includes(tag.name)} onCheckedChange={() => onClick(tag.name)} />
             </div>
           ))
@@ -57,9 +57,9 @@ export const TagsFilter = ({ onChange, value }: TagsFilterProps) => {
         <button
           disabled={isFetchingNextPage}
           onClick={() => fetchNextPage()}
-          className="underline font-medium cursor-pointer justify-start text-start disabled:opacity-50"
+          className="text-sm text-muted-foreground hover:text-foreground cursor-pointer justify-start text-start disabled:opacity-50"
         >
-          Load more...
+          Load more
         </button>
       )}
     </div>

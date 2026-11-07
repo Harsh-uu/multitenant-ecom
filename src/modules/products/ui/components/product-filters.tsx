@@ -19,14 +19,16 @@ const ProductFilter = ({ children, title, className }: ProductFilterProps) => {
   const Icon = isOpen ? ChevronDownIcon : ChevronRightIcon;
 
   return (
-    <div className={cn("p-4 border-b flex flex-col gap-2", className)}>
-      <div
+    <div className={cn("border-b px-4 py-3 flex flex-col gap-3", className)}>
+      <button
+        type="button"
+        aria-expanded={isOpen}
         onClick={() => setIsOpen((current) => !current)}
-        className="flex items-center justify-between cursor-pointer"
+        className="flex items-center justify-between cursor-pointer text-sm font-medium"
       >
-        <p className="font-medium">{title}</p>
-        <Icon className="size-5" />
-      </div>
+        {title}
+        <Icon className="size-4 text-muted-foreground" />
+      </button>
       {isOpen && children}
     </div>
   );
@@ -61,11 +63,11 @@ export const ProductFilters = () => {
     setFilters({ ...filters, [key]: value });
   };
   return (
-    <div className="border rounded-md bg-white">
-      <div className="p-4 border-b flex items-center justify-between">
-        <p className="font-medium">Filters</p>
+    <div className="rounded-xl bg-card shadow-(--shadow-card) lg:sticky lg:top-20">
+      <div className="px-4 py-3 border-b flex items-center justify-between">
+        <p className="font-mono text-xs uppercase tracking-wider text-muted-foreground">Filters</p>
         {hasAnyFilters && (
-          <button className="underline cursor-pointer" onClick={() => onClear()} type="button">
+          <button className="text-sm text-muted-foreground hover:text-foreground cursor-pointer" onClick={() => onClear()} type="button">
             Clear
           </button>
         )}

@@ -24,21 +24,24 @@ export const ProductList = () => {
 
   if (data.pages?.[0]?.docs.length === 0) {
     return (
-      <div className="border border-black border-dashed flex items-center justify-center p-8 flex-col gap-y-4 bg-white w-full rounded-lg">
-        <InboxIcon />
-        <p className="text-base font-medium">No products found</p>
+      <div className="flex w-full flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-[#c9c9c9] bg-background p-12 text-center">
+        <InboxIcon className="size-5 text-muted-foreground" />
+        <div>
+          <p className="text-sm font-medium">No products found</p>
+          <p className="mt-1 text-sm text-muted-foreground">Try a different search or filter.</p>
+        </div>
       </div>
     );
   }
 
   return (
     <>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-5">
         {data?.pages
           .flatMap((page) => page.docs)
           .map((product, index) => (
             <ProductCard
-              priority={index < 4}
+              priority={index < 3}
               key={product.id}
               id={product.id}
               name={product.name}
@@ -55,8 +58,7 @@ export const ProductList = () => {
           <Button
             disabled={isFetchingNextPage}
             onClick={() => fetchNextPage()}
-            className="font-medium disabled:opacity-50 text-base bg-white"
-            variant="elevated"
+            variant="secondary"
           >
             Load more
           </Button>
@@ -68,7 +70,7 @@ export const ProductList = () => {
 
 export const ProductListSkeleton = () => {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-5">
       {" "}
       {Array.from({ length: DEFAULT_LIMIT }).map((_, index) => (
         <ProductCardSkeleton key={index} />

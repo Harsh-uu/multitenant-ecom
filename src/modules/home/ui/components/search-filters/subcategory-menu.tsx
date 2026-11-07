@@ -1,5 +1,6 @@
 import { CategoriesGetManyOutput } from "@/modules/categories/types";
 import { Category } from "@/payload-types";
+import { ChevronRightIcon } from "lucide-react";
 import Link from "next/link";
 
 interface Props {
@@ -16,8 +17,6 @@ export const SubcategoryMenu = ({ category, isOpen }: Props) => {
     return null;
   }
 
-  const backgroundColor = category.color || "#F5F5F5";
-
   return (
     <div
       className="absolute z-100"
@@ -26,18 +25,18 @@ export const SubcategoryMenu = ({ category, isOpen }: Props) => {
         left: 0,
       }}
     >
-      <div className="h-3 w-60" />
-      <div
-        style={{
-          backgroundColor,
-        }}
-        className="w-60 text-black rounded-md overflow-hidden border shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] -tranlate-x-[2px] -tranlate-y-[2px]"
-      >
-        <div>
-            {category.subcategories?.map((subcategory:Category) =>(
-                <Link key={subcategory.slug} href={`/${category.slug}/${subcategory.slug}`} className="w-full text-left p-4 hover:bg-black hover:text-white flex justify-between items-center underline font-medium">{subcategory.name}</Link>
-            ))}
-        </div>
+      <div className="h-1 w-60" />
+      <div className="w-60 rounded-xl bg-popover p-1 shadow-(--shadow-menu) animate-in fade-in-0 zoom-in-95 duration-100">
+        {category.subcategories?.map((subcategory: Category) => (
+          <Link
+            key={subcategory.slug}
+            href={`/${category.slug}/${subcategory.slug}`}
+            className="group flex items-center justify-between rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          >
+            {subcategory.name}
+            <ChevronRightIcon className="size-3.5 opacity-0 transition-opacity group-hover:opacity-100" />
+          </Link>
+        ))}
       </div>
     </div>
   );

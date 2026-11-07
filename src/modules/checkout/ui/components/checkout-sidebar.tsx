@@ -16,30 +16,27 @@ export const CheckoutSidebar = ({
   disabled,
 }: CheckoutSidebarProps) => {
   return (
-    <div className="border rounded-md overflow-hidden bg-white flex flex-col">
-      <div className="flex items-center justify-between p-4 border-b">
-        <h4 className="font-medium text-lg">Total</h4>
-        <p className="font-medium text-lg">{formatCurrency(total)}</p>
+    <div className="flex flex-col overflow-hidden rounded-xl bg-card shadow-(--shadow-card) lg:sticky lg:top-24">
+      <div className="flex items-center justify-between border-b p-5">
+        <h2 className="text-sm text-muted-foreground">Total</h2>
+        <p className="font-mono text-xl font-semibold tracking-tight">{formatCurrency(total)}</p>
       </div>
-      <div className="p-4 flex items-ce\ justify-center">
+      <div className="p-5">
         <Button
-          variant="elevated"
           disabled={disabled}
           onClick={onPurchase}
           size="lg"
-          className="text-base w-full text-white bg-primary hover:bg-pink-400 hover:text-primary"
+          className="w-full"
         >
           Checkout
         </Button>
       </div>
       {isCanceled && (
-        <div className="p-4 flex justify-center items-center border-t">
-            <div className="bg-red-100 border border-red-400 font-medium px-4 py-3 rounded flex items-center w-full">
-                <div className="flex items-center">
-                    <CircleXIcon className="size-6 mr-2 fill-red-500 text-red-100"/>
-                    <span>Checkout failed. Please try again.</span>
-                </div>
-            </div>
+        <div className="border-t p-5">
+          <div className="flex items-center gap-2 rounded-md border border-[#ffd0d0] bg-[#fff0f0] px-3 py-2.5 text-sm text-[#cb2a2f]">
+            <CircleXIcon className="size-4 shrink-0" />
+            <span>Checkout failed. Please try again.</span>
+          </div>
         </div>
       )}
     </div>

@@ -1,5 +1,7 @@
 import { Button } from "@/components/ui/button";
-import { generateTenantURL } from "@/lib/utils";
+import { LogoMark } from "@/components/logo";
+import { appPath, generateTenantURL } from "@/lib/utils";
+import { ArrowLeftIcon } from "lucide-react";
 import Link from "next/link";
 
 interface Props {
@@ -8,11 +10,19 @@ interface Props {
 
 export const Navbar = ({ slug }: Props) => {
   return (
-    <nav className="h-20 border-b font-medium bg-white">
-      <div className="max-w-(--breakpoint-xl) mx-auto flex justify-between items-center h-full px-4 lg:px-12">
-        <p className="text-xl">Checkout</p>
-        <Button asChild variant="elevated">
-          <Link href={generateTenantURL(slug)}>Continue Shopping</Link>
+    <nav className="sticky top-0 z-40 h-16 border-b bg-background/80 backdrop-blur-md">
+      <div className="mx-auto flex h-full max-w-(--breakpoint-xl) items-center justify-between px-4 lg:px-12">
+        <div className="flex items-center gap-3">
+          <Link href={appPath("/")} aria-label="Shelf home">
+            <LogoMark />
+          </Link>
+          <span className="text-sm font-medium">Checkout</span>
+        </div>
+        <Button asChild variant="secondary" size="sm">
+          <Link href={generateTenantURL(slug)}>
+            <ArrowLeftIcon />
+            Continue shopping
+          </Link>
         </Button>
       </div>
     </nav>
