@@ -18,6 +18,8 @@ export const reviewsRouter = createTRPCRouter({
       const product = await ctx.db.findByID({
         collection: "products",
         id: input.productId,
+        depth: 0,
+        select: {},
       });
 
       if (!product) {
@@ -29,6 +31,7 @@ export const reviewsRouter = createTRPCRouter({
 
       const reviewsData = await ctx.db.find({
         collection: "reviews",
+        depth: 0,
         limit: 1,
         where: {
           and: [
@@ -67,6 +70,8 @@ export const reviewsRouter = createTRPCRouter({
       const product = await ctx.db.findByID({
         collection: "products",
         id: input.productId,
+        depth: 0,
+        select: {},
       });
 
       if (!product) {
@@ -78,6 +83,9 @@ export const reviewsRouter = createTRPCRouter({
 
       const existingReviewData = await ctx.db.find({
         collection: "reviews",
+        depth: 0,
+        limit: 1,
+        select: {},
         where: {
           and: [
             {

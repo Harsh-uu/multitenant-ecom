@@ -6,7 +6,7 @@ import { sortValues } from "../search-params";
 import { DEFAULT_LIMIT } from "@/constants";
 import { headers as getHeaders } from "next/headers";
 import { TRPCError } from "@trpc/server";
-import { Search } from "lucide-react";
+import { getReviewSummaries } from "@/modules/reviews/server/summaries";
 
 export const productsRouter = createTRPCRouter({
   getOne: baseProcedure
@@ -17,15 +17,17 @@ export const productsRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       const headers = await getHeaders();
-      const session = await ctx.db.auth({ headers });
-      const product = await ctx.db.findByID({
-        collection: "products",
-        id: input.id,
-        depth: 2,
-        select: {
-          content: false,
-        },
-      });
+      const [session, product] = await Promise.all([
+        ctx.db.auth({ headers }),
+        ctx.db.findByID({
+          collection: "products",
+          id: input.id,
+          depth: 2,
+          select: {
+            content: false,
+          },
+        }),
+      ]);
 
       if (product.isArchived) {
         throw new TRPCError({
@@ -34,41 +36,36 @@ export const productsRouter = createTRPCRouter({
         });
       }
 
-      let isPurchased = false;
-
-      if (session.user) {
-        const ordersData = await ctx.db.find({
-          collection: "orders",
+      const [ordersData, reviews] = await Promise.all([
+        session.user
+          ? ctx.db.find({
+              collection: "orders",
+              depth: 0,
+              pagination: false,
+              limit: 1,
+              select: {},
+              where: {
+                and: [
+                  { product: { equals: input.id } },
+                  { user: { equals: session.user.id } },
+                ],
+              },
+            })
+          : null,
+        ctx.db.find({
+          collection: "reviews",
+          depth: 0,
           pagination: false,
-          limit: 1,
+          select: { rating: true },
           where: {
-            and: [
-              {
-                product: {
-                  equals: input.id,
-                },
-              },
-              {
-                user: {
-                  equals: session.user.id,
-                },
-              },
-            ],
+            product: {
+              equals: input.id,
+            },
           },
-        });
+        }),
+      ]);
 
-        isPurchased = !!ordersData.docs[0];
-      }
-
-      const reviews = await ctx.db.find({
-        collection: "reviews",
-        pagination: false,
-        where: {
-          product: {
-            equals: input.id,
-          },
-        },
-      });
+      const isPurchased = !!ordersData?.docs[0];
 
       const reviewRating =
         reviews.docs.length > 0
@@ -178,6 +175,7 @@ export const productsRouter = createTRPCRouter({
           limit: 1,
           depth: 1, // Populate subcategories, subcategories.[0] will be a type of "Category"
           pagination: false,
+          select: { slug: true, subcategories: true },
           where: {
             slug: {
               equals: input.category,
@@ -222,41 +220,32 @@ export const productsRouter = createTRPCRouter({
 
       const data = await ctx.db.find({
         collection: "products",
-        depth: 2, // Populate "category" & "image"
+        depth: 2, // Populate "image" and "tenant.image"
         where,
         sort,
         page: input.cursor,
         limit: input.limit,
+        // Only what product cards render
         select: {
-          content: false,
+          name: true,
+          price: true,
+          image: true,
+          tenant: true,
+        },
+        populate: {
+          tenants: { name: true, slug: true, image: true },
         },
       });
 
-      const dataWithSummarizedReviews = await Promise.all(
-        data.docs.map(async (doc) => {
-          const reviewsData = await ctx.db.find({
-            collection: "reviews",
-            pagination: false,
-            where: {
-              product: {
-                equals: doc.id,
-              },
-            },
-          });
-
-          return {
-            ...doc,
-            reviewCount: reviewsData.totalDocs,
-            reviewRating:
-              reviewsData.docs.length === 0
-                ? 0
-                : reviewsData.docs.reduce(
-                    (acc, review) => acc + review.rating,
-                    0
-                  ) / reviewsData.totalDocs,
-          };
-        })
+      const summaries = await getReviewSummaries(
+        ctx.db,
+        data.docs.map((doc) => doc.id)
       );
+
+      const dataWithSummarizedReviews = data.docs.map((doc) => ({
+        ...doc,
+        ...summaries.get(doc.id)!,
+      }));
 
       return {
         ...data,

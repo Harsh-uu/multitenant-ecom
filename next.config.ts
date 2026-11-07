@@ -2,22 +2,31 @@ import { withPayload } from "@payloadcms/next/withPayload";
 
 import type { NextConfig } from "next";
 
+const serverUrl = new URL(
+  process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:3000"
+);
+
 const nextConfig: NextConfig = {
   images: {
+    formats: ["image/avif", "image/webp"],
+    // Optimized images are immutable per URL; cache them for 30 days.
+    minimumCacheTTL: 60 * 60 * 24 * 30,
     remotePatterns: [
       {
-        protocol: (
-          process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:3000"
-        ).startsWith("https")
-          ? "https"
-          : "http",
-        hostname: new URL(
-          process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:3000"
-        ).hostname,
+        protocol: serverUrl.protocol === "https:" ? "https" : "http",
+        hostname: serverUrl.hostname,
+      },
+      {
+        // Media uploaded via @payloadcms/storage-vercel-blob
+        protocol: "https",
+        hostname: "*.public.blob.vercel-storage.com",
       },
     ],
   },
-  /* config options here */
+  experimental: {
+    // Tree-shake barrel imports from these packages.
+    optimizePackageImports: ["lucide-react", "date-fns", "recharts"],
+  },
 };
 
 export default withPayload(nextConfig);

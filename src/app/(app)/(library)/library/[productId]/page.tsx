@@ -1,3 +1,4 @@
+import { requireUser } from "@/modules/auth/server/require-user";
 import { ProductView } from "@/modules/library/ui/views/product-view";
 import { getQueryClient, trpc } from "@/trpc/server";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
@@ -13,6 +14,7 @@ interface Props {
 
 const Page = async ({ params }: Props) => {
   const { productId } = await params;
+  await requireUser();
   const queryClient = getQueryClient();
   void queryClient.prefetchQuery(
     trpc.library.getOne.queryOptions({

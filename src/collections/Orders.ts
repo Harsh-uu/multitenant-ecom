@@ -19,12 +19,9 @@ export const Orders: CollectionConfig = {
       
       return false;
     },
-    create: ({ req }) => {
-      // Allow webhook creation (no user in webhook context)
-      if (!req.user) return true;
-      // Allow superadmins to create orders manually
-      return isSuperAdmin(req.user);
-    },
+    // The Stripe webhook creates orders through the Local API, which bypasses
+    // access control, so only superadmins need REST/admin create access.
+    create: ({ req }) => isSuperAdmin(req.user),
     update: ({ req }) => isSuperAdmin(req.user),
     delete: ({ req }) => isSuperAdmin(req.user),
   },
@@ -43,6 +40,7 @@ export const Orders: CollectionConfig = {
       relationTo: "users",
       required: true,
       hasMany: false,
+      index: true,
     },
     {
       name: "product",
@@ -50,6 +48,7 @@ export const Orders: CollectionConfig = {
       relationTo: "products",
       required: true,
       hasMany: false,
+      index: true,
     },
     {
       name: "stripeCheckoutSessionId",

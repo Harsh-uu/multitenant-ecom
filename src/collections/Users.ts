@@ -21,7 +21,11 @@ const defaulTenantArrayField = tenantsArrayField({
 export const Users: CollectionConfig = {
   slug: "users",
   access: {
-    read: () => true,
+    read: ({ req }) => {
+      if (isSuperAdmin(req.user)) return true;
+      if (req.user) return { id: { equals: req.user.id } };
+      return false;
+    },
     create: ({ req }) => isSuperAdmin(req.user),
     delete: ({ req }) => isSuperAdmin(req.user),
     update: ({ req, id }) => {

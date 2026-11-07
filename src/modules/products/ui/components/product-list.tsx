@@ -1,5 +1,6 @@
 "use client";
 
+import { getNextPageParam } from "@/lib/pagination";
 import { useTRPC } from "@/trpc/client";
 import { useSuspenseInfiniteQuery } from "@tanstack/react-query";
 import { useProductFilters } from "../../hooks/use-product-filters";
@@ -28,9 +29,7 @@ export const ProductList = ({ category, tenantSlug, narrowView }: Props) => {
           limit: DEFAULT_LIMIT,
         },
         {
-          getNextPageParam: (lastPage) => {
-            return lastPage.docs.length > 0 ? lastPage.nextPage : undefined;
-          },
+          getNextPageParam,
         }
       )
     );

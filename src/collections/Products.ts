@@ -32,6 +32,7 @@ export const Products: CollectionConfig = {
       name: "price",
       type: "number",
       required: true,
+      index: true,
       admin: {
         description: "Price in USD",
       },
@@ -41,6 +42,7 @@ export const Products: CollectionConfig = {
       type: "relationship",
       relationTo: "categories",
       hasMany: false,
+      index: true,
     },
     {
       name: "tags",
@@ -72,6 +74,7 @@ export const Products: CollectionConfig = {
       label: "Private",
       defaultValue: false,
       type: "checkbox",
+      index: true,
       admin: {
         description: "If checked, this product will not be shown on the public storefront"
       }
@@ -81,6 +84,7 @@ export const Products: CollectionConfig = {
       label: "Archive",
       defaultValue: false,
       type: "checkbox",
+      index: true,
       admin: {
         description: "If checked, this product will be archived"
       }

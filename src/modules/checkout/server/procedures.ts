@@ -67,7 +67,9 @@ export const checkoutRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const products = await ctx.db.find({
         collection: "products",
-        depth: 2,
+        depth: 0,
+        pagination: false,
+        select: { name: true, price: true },
         where: {
           and: [
             {
@@ -94,30 +96,33 @@ export const checkoutRouter = createTRPCRouter({
           message: "Products not found",
         });
       }
-      const tenantsData = await ctx.db.find({
-        collection: "tenants",
-        limit: 1,
-        pagination: false,
-        where: {
-          slug: {
-            equals: input.tenantSlug,
+      const [tenantsData, currentUser] = await Promise.all([
+        ctx.db.find({
+          collection: "tenants",
+          depth: 0,
+          limit: 1,
+          pagination: false,
+          where: {
+            slug: {
+              equals: input.tenantSlug,
+            },
           },
-        },
-      });
+        }),
+        // Check if user is superadmin - if so, bypass stripe verification
+        ctx.db.findByID({
+          collection: "users",
+          id: ctx.session.user.id,
+          depth: 0,
+        }),
+      ]);
 
-      const tenant = tenantsData.docs[0];      if (!tenant) {
+      const tenant = tenantsData.docs[0];
+      if (!tenant) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Tenant not found",
         });
       }
-
-      // Check if user is superadmin - if so, bypass stripe verification
-      const currentUser = await ctx.db.findByID({
-        collection: "users",
-        id: ctx.session.user.id,
-        depth: 0,
-      });
 
       const isUserSuperAdmin = isSuperAdmin(currentUser);
 
@@ -205,7 +210,13 @@ export const checkoutRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const data = await ctx.db.find({
         collection: "products",
-        depth: 2, // Populate "category" & "image"
+        depth: 2, // Populate "image" and "tenant.image"
+        pagination: false,
+        // Public endpoint: never return the paid "content" field.
+        select: { name: true, price: true, image: true, tenant: true },
+        populate: {
+          tenants: { name: true, slug: true, image: true },
+        },
         where: {
           and: [
             {

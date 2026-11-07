@@ -1,5 +1,14 @@
 import { isSuperAdmin } from "@/lib/access";
 import type { CollectionConfig } from "payload";
+import { revalidateTag } from "next/cache";
+
+const revalidateCategories = () => {
+  try {
+    revalidateTag("categories", { expire: 0 });
+  } catch {
+    // Not running inside Next.js (e.g. the seed script); nothing to revalidate.
+  }
+};
 
 export const Categories: CollectionConfig = {
   slug: "categories",
@@ -8,6 +17,10 @@ export const Categories: CollectionConfig = {
     create: ({ req }) => isSuperAdmin(req.user),
     update: ({ req }) => isSuperAdmin(req.user),
     delete: ({ req }) => isSuperAdmin(req.user),
+  },
+  hooks: {
+    afterChange: [revalidateCategories],
+    afterDelete: [revalidateCategories],
   },
   admin: {
     useAsTitle: "name",
@@ -35,6 +48,7 @@ export const Categories: CollectionConfig = {
       type: "relationship",
       relationTo: "categories",
       hasMany: false,
+      index: true,
     },
     {
       name: "subcategories",
