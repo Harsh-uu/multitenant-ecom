@@ -63,9 +63,9 @@ export const CheckoutView = ({ tenantSlug }: CheckoutViewProps) => {
 
   if (isLoading) {
     return (
-      <div className="lg:pt-16 pt-4 px-4 lg:px-12">
-        <div className="border border-black border-dashed flex items-center justify-center p-8 flex-col gap-y-4 bg-white w-full rounded-lg">
-          <LoaderIcon className="text-muted-foreground animate-spin" />
+      <div className="px-4 pt-8 pb-12 lg:px-12 lg:pt-12">
+        <div className="flex w-full flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-[#c9c9c9] bg-background p-12">
+          <LoaderIcon className="size-5 text-muted-foreground animate-spin" />
         </div>
       </div>
     );
@@ -73,20 +73,20 @@ export const CheckoutView = ({ tenantSlug }: CheckoutViewProps) => {
 
   if (data?.totalDocs === 0) {
     return (
-      <div className="lg:pt-16 pt-4 px-4 lg:px-12">
-        <div className="border border-black border-dashed flex items-center justify-center p-8 flex-col gap-y-4 bg-white w-full rounded-lg">
-          <InboxIcon />
-          <p className="text-base font-medium">No products found</p>
+      <div className="px-4 pt-8 pb-12 lg:px-12 lg:pt-12">
+        <div className="flex w-full flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-[#c9c9c9] bg-background p-12">
+          <InboxIcon className="size-5 text-muted-foreground" />
+          <p className="text-sm font-medium">Your cart is empty</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="lg:pt-16 pt-4 px-4 lg:px-12">
+    <div className="px-4 pt-8 pb-12 lg:px-12 lg:pt-12">
       <div className="grid grid-cols-1 lg:grid-cols-7 gap-4 lg:gap-16">
         <div className="lg:col-span-4">
-          <div className="border rounded-md overflow-hidden bg-white">
+          <div className="overflow-hidden rounded-xl bg-card shadow-(--shadow-card)">
             {data?.docs.map((product, index) => (
               <CheckoutItem
                 key={product.id}

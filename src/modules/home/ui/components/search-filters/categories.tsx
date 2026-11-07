@@ -96,17 +96,16 @@ export const Categories = ({ data }: Props) => {
 
         <div ref={viewAllRef} className="shrink-0">
           <Button
-            variant="elevated"
+            variant="ghost"
+            size="sm"
             className={cn(
-              "h-11 px-4 bg-transparent border-transparent rounded-full hover:bg-white hover:border-primary text-black",
-              isActiveCategoryHidden &&
-                !isAnyHovered &&
-                "bg-white border-primary"
+              "mb-2 font-normal text-muted-foreground hover:text-foreground",
+              isActiveCategoryHidden && "text-foreground"
             )}
             onClick={() => setIsSidebarOpen(true)}
           >
-            View All
-            <ListFilterIcon className="ml-2" />
+            View all
+            <ListFilterIcon />
           </Button>
         </div>
       </div>

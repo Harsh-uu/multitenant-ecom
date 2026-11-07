@@ -14,11 +14,7 @@ export const CartButton = ({ tenantSlug, productId, isPurchased }: Props) => {
 
   if (isPurchased) {
     return (
-      <Button
-        asChild
-        variant="elevated"
-        className="flex-1 font-medium bg-white"
-      >
+      <Button asChild size="lg" variant="secondary" className="flex-1">
         <Link href={appPath(`/library/${productId}`)}>
           View in Library
         </Link>
@@ -28,11 +24,9 @@ export const CartButton = ({ tenantSlug, productId, isPurchased }: Props) => {
 
   return (
     <Button
-      variant="elevated"
-      className={cn(
-        "flex-1 bg-pink-400",
-        cart.isProductInCart(productId) && "bg-white"
-      )}
+      size="lg"
+      variant={cart.isProductInCart(productId) ? "secondary" : "default"}
+      className={cn("flex-1")}
       onClick={() => cart.toggleProduct(productId)}
     >
       {cart.isProductInCart(productId) ? "Remove from cart" : "Add to cart"}

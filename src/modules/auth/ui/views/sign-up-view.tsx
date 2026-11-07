@@ -14,7 +14,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import Link from "next/link";
-import { Poppins } from "next/font/google";
+import { AuthShell } from "../components/auth-shell";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,11 +22,6 @@ import { useTRPC } from "@/trpc/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-
-const poppins = Poppins({
-  subsets: ["latin"],
-  weight: ["700"],
-});
 
 export const SignUpView = () => {
   const router = useRouter();
@@ -66,40 +61,21 @@ export const SignUpView = () => {
   const showPreview = username && !usernameErrors;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-5">
-      <div className="bg-[#F4F4F0] h-screen w-full lg:col-span-3 overflow-y-auto">
-        <Form {...form}>
+    <AuthShell
+      title="Create your Shelf store"
+      subtitle="Join over 1,500 creators selling digital products on Shelf."
+      footer={<>Already have an account?{" "}<Link prefetch href="/sign-in" className="text-foreground hover:underline underline-offset-4">Log in</Link></>}
+    >
+      <Form {...form}>
           <form
             onSubmit={form.handleSubmit(onSubmit)}
-            className="flex flex-col gap-8 p-4 lg:p-16"
+            className="flex flex-col gap-5"
           >
-            <div className="flex items-center justify-between mb-8">
-              <Link href="/">
-                <span
-                  className={cn("text-2xl font-semibold", poppins.className)}
-                >
-                  funroad
-                </span>
-              </Link>
-              <Button
-                asChild
-                variant="ghost"
-                size="sm"
-                className="text-base border-none underline"
-              >
-                <Link prefetch href="/sign-in">
-                  Sign in
-                </Link>
-              </Button>
-            </div>
-            <h1 className="text-4xl font-medium">
-              Join over 1,500 creators earning money on funroad.
-            </h1>
             <FormField
               name="username"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-base">Username</FormLabel>
+                  <FormLabel className="text-sm font-normal text-muted-foreground">Username</FormLabel>
                   <FormControl>
                     <Input {...field} />
                   </FormControl>
@@ -117,7 +93,7 @@ export const SignUpView = () => {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-base">Email</FormLabel>
+                  <FormLabel className="text-sm font-normal text-muted-foreground">Email</FormLabel>
                   <FormControl>
                     <Input {...field} />
                   </FormControl>
@@ -129,7 +105,7 @@ export const SignUpView = () => {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-base">Password</FormLabel>
+                  <FormLabel className="text-sm font-normal text-muted-foreground">Password</FormLabel>
                   <FormControl>
                     <Input {...field} type="password" />
                   </FormControl>
@@ -140,23 +116,12 @@ export const SignUpView = () => {
             <Button
               disabled={register.isPending}
               type="submit"
-              size="lg"
-              variant="elevated"
-              className="bg-black text-white hover:bg-pink-400 hover:text-primary"
+              className="mt-1 w-full"
             >
               Create account
             </Button>
           </form>
         </Form>
-      </div>
-      <div
-        className="h-screen w-full lg:col-span-2 hidden lg:block"
-        style={{
-          backgroundImage: "url('/auth-bg.png')",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      />
-    </div>
+    </AuthShell>
   );
 };

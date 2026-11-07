@@ -1,12 +1,13 @@
 "use client";
 
-import { generateTenantURL } from "@/lib/utils";
+import { appPath, generateTenantURL } from "@/lib/utils";
 import { useTRPC } from "@/trpc/client";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import Image from "@/components/media-image";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
+import { LogoMark } from "@/components/logo";
 import { ShoppingCartIcon } from "lucide-react";
 
 const CheckoutButton = dynamic(
@@ -17,53 +18,71 @@ const CheckoutButton = dynamic(
   {
     ssr: false,
     loading: () => (
-      <Button disabled className="bg-white">
-        <ShoppingCartIcon className="text-black" />
+      <Button disabled variant="secondary" size="icon" aria-label="Cart">
+        <ShoppingCartIcon />
       </Button>
     ),
   }
+);
+
+const Slash = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true" className="size-5 shrink-0 text-[#d4d4d4]">
+    <path d="M16.88 3.549L7.12 20.451" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+  </svg>
 );
 
 interface Props {
   slug: string;
 }
 
+const Shell = ({ children }: { children: React.ReactNode }) => (
+  <nav className="sticky top-0 z-40 h-16 border-b bg-background/80 backdrop-blur-md">
+    <div className="mx-auto flex h-full max-w-(--breakpoint-xl) items-center justify-between gap-4 px-4 lg:px-12">
+      {children}
+    </div>
+  </nav>
+);
+
 export const Navbar = ({ slug }: Props) => {
   const trpc = useTRPC();
   const { data } = useSuspenseQuery(trpc.tenants.getOne.queryOptions({ slug }));
   return (
-    <nav className="h-20 border-b font-medium bg-white">
-      <div className="max-w-(--breakpoint-xl) mx-auto flex justify-between items-center h-full px-4 lg:px-12">
+    <Shell>
+      <div className="flex min-w-0 items-center gap-2">
+        <Link href={appPath("/")} aria-label="Shelf home">
+          <LogoMark />
+        </Link>
+        <Slash />
         <Link
           href={generateTenantURL(slug)}
-          className="flex items-center gap-2"
+          className="flex min-w-0 items-center gap-2 rounded-md px-1.5 py-1 hover:bg-accent"
         >
           {data.image?.url && (
             <Image
-              alt={slug}
+              alt=""
               src={data.image.url}
-              width={32}
-              height={32}
-              className="rounded-full border shrink-0 size-[32px]"
+              width={24}
+              height={24}
+              className="size-6 shrink-0 rounded-full"
             />
           )}
-          <p className="text-xl">{data.name}</p>
+          <span className="truncate text-sm font-medium">{data.name}</span>
         </Link>
-        <CheckoutButton hideIfEmpty tenantSlug={slug} />
       </div>
-    </nav>
+      <CheckoutButton hideIfEmpty tenantSlug={slug} />
+    </Shell>
   );
 };
 
 export const NavbarSkeleton = () => {
   return (
-    <nav className="h-20 border-b font-medium bg-white">
-      <div className="max-w-(--breakpoint-xl) mx-auto flex justify-between items-center h-full px-4 lg:px-12">
-        <div />
-        <Button disabled className="bg-white">
-          <ShoppingCartIcon className="text-black" />
-        </Button>
+    <Shell>
+      <div className="flex items-center gap-2">
+        <LogoMark />
+        <Slash />
+        <div className="h-5 w-32 animate-pulse rounded bg-muted" />
       </div>
-    </nav>
+      <div />
+    </Shell>
   );
 };

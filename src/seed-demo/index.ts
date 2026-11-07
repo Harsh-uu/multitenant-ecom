@@ -92,7 +92,7 @@ async function hostedImage(payload: Payload, photo: PickedPhoto, alt: string, te
     url.searchParams.set("ar", "1:1");
     url.searchParams.set("crop", "entropy");
   }
-  const utm = "utm_source=funroad&utm_medium=referral";
+  const utm = "utm_source=shelf&utm_medium=referral";
   return payload.create({
     collection: "media",
     data: {
@@ -126,7 +126,7 @@ async function createAccount(payload: Payload, opts: {
     ? await hostedImage(payload, opts.logo, `${opts.displayName} logo`, tenant.id, true)
     : await uploadImage(
         payload,
-        await avatar({ initials: opts.initials, color: "#F4F4F0" }),
+        await avatar({ initials: opts.initials, color: "#F2F2F2" }),
         `avatar-${opts.username}`,
         `${opts.displayName} avatar`,
         tenant.id

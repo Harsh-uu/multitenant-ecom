@@ -178,7 +178,7 @@ export interface Tenant {
    */
   name: string;
   /**
-   * This is the subdomain for the store (e.g. [slug].funroad.com
+   * This is the subdomain for the store (e.g. [slug].shelf.com
    */
   slug: string;
   image?: (string | null) | Media;

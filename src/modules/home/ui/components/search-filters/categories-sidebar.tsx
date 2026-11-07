@@ -61,24 +61,18 @@ export const CategoriesSidebar = ({ open, onOpenChange }: Props) => {
     setParentCategories(null);
   };
 
-  const backgroundColor = selectedCategory?.color || "white";
-
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
-      <SheetContent
-        side="left"
-        className="p-0 transition-none"
-        style={{ backgroundColor }}
-      >
-        <SheetHeader className="p-4 border-b">
-          <SheetTitle>Categories</SheetTitle>
+      <SheetContent side="left" className="p-0 transition-none">
+        <SheetHeader className="h-16 justify-center border-b px-4">
+          <SheetTitle>{selectedCategory?.name ?? "Categories"}</SheetTitle>
         </SheetHeader>
 
-        <ScrollArea className="flex flex-col overflow-y-auto h-full pb-2">
+        <ScrollArea className="flex flex-col overflow-y-auto h-full p-2">
           {parentCategories && (
             <button
               onClick={() => handleBackButton()}
-              className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium cursor-pointer"
+              className="w-full text-left rounded-md px-3 py-2.5 hover:bg-accent flex items-center text-sm text-muted-foreground hover:text-foreground cursor-pointer"
             >
               <ChevronLeftIcon className="size-4 mr-2" />
               Back
@@ -87,12 +81,12 @@ export const CategoriesSidebar = ({ open, onOpenChange }: Props) => {
           {currentCategories.map((category) => (
             <button
               key={category.slug}
-              className="w-full text-left p-4 hover:bg-black hover:text-white flex justify-between items-center text-base font-medium cursor-pointer"
+              className="w-full text-left rounded-md px-3 py-2.5 hover:bg-accent flex justify-between items-center text-sm cursor-pointer"
               onClick={() => handleCategoryClick(category)}
             >
               {category.name}
               {category.subcategories && category.subcategories.length > 0 && (
-                <ChevronRightIcon className="size-4" />
+                <ChevronRightIcon className="size-4 text-muted-foreground" />
               )}
             </button>
           ))}

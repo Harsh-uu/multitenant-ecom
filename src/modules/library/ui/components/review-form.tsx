@@ -85,7 +85,7 @@ export const ReviewForm = ({ productId, initialData }: Props) => {
         className="flex flex-col gap-y-4"
         onSubmit={form.handleSubmit(onSubmit)}
       >
-        <p className="font-medium">
+        <p className="text-sm font-medium">
           {isPreview ? "Your rating" : "Liked it? Give it a rating"}
         </p>
         <FormField
@@ -118,11 +118,9 @@ export const ReviewForm = ({ productId, initialData }: Props) => {
         />
         {!isPreview && (
           <Button
-            variant="elevated"
             disabled={createReview.isPending || updateReview.isPending}
             type="submit"
-            size="lg"
-            className="bg-black text-white hover:bg-pink-400 hover:text-primary w-fit"
+            className="w-fit"
           >
             {initialData ? "Update review" : "Post review"}
           </Button>
@@ -131,9 +129,8 @@ export const ReviewForm = ({ productId, initialData }: Props) => {
       {isPreview && (
         <Button
           onClick={() => setIsPreview(false)}
-          size="lg"
           type="button"
-          variant="elevated"
+          variant="secondary"
           className="w-fit mt-4"
         >
           Edit

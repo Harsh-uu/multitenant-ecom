@@ -1,3 +1,5 @@
+import { Logo } from "@/components/logo";
+import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Sheet,
@@ -14,43 +16,49 @@ interface NavbarItem {
 
 interface Props {
   items: NavbarItem[];
+  isSignedIn: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export const NavbarSidebar = ({ items, open, onOpenChange }: Props) => {
+export const NavbarSidebar = ({ items, isSignedIn, open, onOpenChange }: Props) => {
+  const close = () => onOpenChange(false);
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="left" className="p-0 transition-none">
-        <SheetHeader className="p-4 border-b">
-          <SheetTitle>Menu</SheetTitle>
+        <SheetHeader className="h-16 justify-center border-b px-4">
+          <SheetTitle>
+            <Logo />
+          </SheetTitle>
         </SheetHeader>
-        <ScrollArea className="flex flex-col overflow-y-auto h-full pb-2">
-          {items.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium"
-              onClick={() => onOpenChange(false)}
-            >
-              {item.children}
-            </Link>
-          ))}
-          <div className="border-t ">
-            <Link
-              onClick={() => onOpenChange(false)}
-              href="/sign-in"
-              className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium"
-            >
-              Log in
-            </Link>
-            <Link
-              onClick={() => onOpenChange(false)}
-              href="/sign-up"
-              className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium"
-            >
-              Start Selling
-            </Link>
+        <ScrollArea className="flex h-full flex-col overflow-y-auto pb-2">
+          <div className="flex flex-col p-2">
+            {items.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="rounded-md px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                onClick={close}
+              >
+                {item.children}
+              </Link>
+            ))}
+          </div>
+          <div className="flex flex-col gap-2 border-t p-4">
+            {isSignedIn ? (
+              <Button asChild onClick={close}>
+                <Link href="/admin">Dashboard</Link>
+              </Button>
+            ) : (
+              <>
+                <Button asChild variant="secondary" onClick={close}>
+                  <Link href="/sign-in">Log in</Link>
+                </Button>
+                <Button asChild onClick={close}>
+                  <Link href="/sign-up">Start selling</Link>
+                </Button>
+              </>
+            )}
           </div>
         </ScrollArea>
       </SheetContent>

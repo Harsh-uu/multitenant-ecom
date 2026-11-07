@@ -1,21 +1,16 @@
-import { appPath, cn } from "@/lib/utils"
-import { Poppins } from "next/font/google"
-import Link from "next/link"
+import { Logo } from "@/components/logo";
+import { appPath } from "@/lib/utils";
+import Link from "next/link";
 
-const poppins = Poppins({
-    subsets: ["latin"],
-    weight: ["700"],
-})
-
-export const Footer =() => {
-    return(
-        <footer className="border-t font-medium bg-white">
-            <div className="max-w-(--breakpoint-xl) mx-auto flex items-center h-full gap-2 px-4 py-6 lg:px-12">
-                <p>Powered by</p>
-                <Link href={appPath("/")}>
-                    <span className={cn("text-2xl font-semibold", poppins.className)}>funroad</span>
-                </Link>
-            </div>
-        </footer>
-    )
-}
+export const Footer = () => {
+  return (
+    <footer className="border-t bg-background">
+      <div className="mx-auto flex max-w-(--breakpoint-xl) items-center gap-2 px-4 py-6 text-sm text-muted-foreground lg:px-12">
+        <span>Powered by</span>
+        <Link href={appPath("/")} className="text-foreground">
+          <Logo markClassName="size-5" className="[&>span:last-child]:text-sm" />
+        </Link>
+      </div>
+    </footer>
+  );
+};

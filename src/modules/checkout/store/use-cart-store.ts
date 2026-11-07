@@ -56,7 +56,7 @@ export const useCartStore = create<CartState>()(
         }),
     }),
     {
-      name: "funroad-cart",
+      name: "shelf-cart",
       storage: createJSONStorage(() => localStorage),
     }
   )
