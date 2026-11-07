@@ -67,6 +67,16 @@ export async function POST(req: Request) {
             `   Found user: ${user.email} (Roles: ${user.roles?.join(", ") || "none"})`
           );
 
+          // Stripe retries deliveries; don't create the same orders twice.
+          const existingOrders = await payload.count({
+            collection: "orders",
+            where: { stripeCheckoutSessionId: { equals: data.id } },
+          });
+          if (existingOrders.totalDocs > 0) {
+            console.log(`   ↩️ Orders already exist for session ${data.id}, skipping`);
+            break;
+          }
+
           const expandedSession = await stripe.checkout.sessions.retrieve(
             data.id,
             {
@@ -118,7 +128,7 @@ export async function POST(req: Request) {
           await payload.update({
             collection: "tenants",
             where: {
-              stripeAccountId: {
+              stripeAccountID: {
                 equals: data.id,
               },
             },

@@ -9,7 +9,7 @@
     "start": "next start",
     "generate:types": "payload generate:types",
     "db:fresh": "payload migrate:fresh",
-    "db:seed": "bun run src/seed.ts"
+    "db:seed": "payload run src/seed.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",

@@ -26,10 +26,11 @@ export const productsRouter = createTRPCRouter({
           select: {
             content: false,
           },
+          disableErrors: true,
         }),
       ]);
 
-      if (product.isArchived) {
+      if (!product || product.isArchived) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Product not found",

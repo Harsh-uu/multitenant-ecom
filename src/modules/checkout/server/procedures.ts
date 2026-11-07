@@ -20,6 +20,7 @@ export const checkoutRouter = createTRPCRouter({
       collection: "users",
       id: ctx.session.user.id,
       depth: 0,
+      disableErrors: true,
     });
     if (!user) {
       throw new TRPCError({
@@ -28,11 +29,15 @@ export const checkoutRouter = createTRPCRouter({
       });
     }
 
-    const tenantId = user.tenants?.[0]?.tenant as string;
-    const tenant = await ctx.db.findByID({
-      collection: "tenants",
-      id: tenantId,
-    });
+    const tenantId = user.tenants?.[0]?.tenant as string | undefined;
+    const tenant = tenantId
+      ? await ctx.db.findByID({
+          collection: "tenants",
+          id: tenantId,
+          depth: 0,
+          disableErrors: true,
+        })
+      : null;
 
     if (!tenant) {
       throw new TRPCError({
