@@ -1,5 +1,5 @@
 import { cn, formatCurrency } from "@/lib/utils";
-import Image from "next/image";
+import Image from "@/components/media-image";
 import Link from "next/link";
 
 interface CheckoutItemProps {

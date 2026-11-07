@@ -1,5 +1,5 @@
 import { StarIcon } from "lucide-react";
-import Image from "next/image";
+import Image from "@/components/media-image";
 import Link from "next/link";
 
 interface ProductCardProps {

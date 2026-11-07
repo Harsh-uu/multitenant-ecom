@@ -12,7 +12,12 @@ import { getPayload, type Payload, type Where } from "payload";
 import config from "@payload-config";
 
 import { stripe } from "../lib/stripe";
-import { abstractAvatar, abstractCover, avatar, type PaletteName } from "./art";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+import { avatar } from "./art";
+import type { PickedPhoto } from "./pick-photos";
 import {
   BUYERS,
   DEMO_EMAIL_DOMAIN,
@@ -69,28 +74,63 @@ async function uploadImage(payload: Payload, data: Buffer, name: string, alt: st
   });
 }
 
+// Unsplash photos chosen by pick-photos.ts.
+const photosFile = path.join(path.dirname(fileURLToPath(import.meta.url)), "photos.json");
+const photos: Record<string, PickedPhoto> = fs.existsSync(photosFile)
+  ? JSON.parse(fs.readFileSync(photosFile, "utf8"))
+  : {};
+
+/**
+ * Media record pointing at an Unsplash photo. Unsplash's API terms require
+ * hotlinking (no re-hosting) and crediting the photographer, so we store
+ * the URL and credit rather than uploading a file.
+ */
+async function hostedImage(payload: Payload, photo: PickedPhoto, alt: string, tenant: string, square = false) {
+  const url = new URL(photo.url);
+  if (square) {
+    url.searchParams.set("fit", "crop");
+    url.searchParams.set("ar", "1:1");
+    url.searchParams.set("crop", "entropy");
+  }
+  const utm = "utm_source=funroad&utm_medium=referral";
+  return payload.create({
+    collection: "media",
+    data: {
+      alt,
+      tenant,
+      externalUrl: url.toString(),
+      credit: {
+        name: photo.photographer,
+        url: `${photo.profileUrl}?${utm}`,
+        source: "Unsplash",
+        sourceUrl: `https://unsplash.com/?${utm}`,
+      },
+    } as never,
+  });
+}
+
 async function createStripeAccount() {
   const account = await stripe.accounts.create({});
   return account.id;
 }
 
 async function createAccount(payload: Payload, opts: {
-  username: string; displayName: string; initials: string; palette?: PaletteName;
+  username: string; displayName: string; initials: string; logo?: PickedPhoto;
 }) {
   const stripeAccountID = await createStripeAccount();
   const tenant = await payload.create({
     collection: "tenants",
     data: { name: opts.displayName, slug: opts.username, stripeAccountID },
   });
-  const image = await uploadImage(
-    payload,
-    opts.palette
-      ? await abstractAvatar(opts.username, opts.palette, opts.displayName[0]!.toUpperCase())
-      : await avatar({ initials: opts.initials, color: "#F4F4F0" }),
-    `avatar-${opts.username}`,
-    `${opts.displayName} avatar`,
-    tenant.id
-  );
+  const image = opts.logo
+    ? await hostedImage(payload, opts.logo, `${opts.displayName} logo`, tenant.id, true)
+    : await uploadImage(
+        payload,
+        await avatar({ initials: opts.initials, color: "#F4F4F0" }),
+        `avatar-${opts.username}`,
+        `${opts.displayName} avatar`,
+        tenant.id
+      );
   await payload.update({ collection: "tenants", id: tenant.id, data: { image: image.id } });
   const user = await payload.create({
     collection: "users",
@@ -168,6 +208,13 @@ async function seedDemo() {
     console.log("Gave the admin store a real Stripe test account");
   }
 
+  const missing = STORES.flatMap((st) => st.products)
+    .filter((p) => !photos[`product:${p.name}`])
+    .map((p) => p.name);
+  if (missing.length) {
+    throw new Error(`No Unsplash photo picked for: ${missing.join(", ")}. Run src/seed-demo/pick-photos.ts first.`);
+  }
+
   await cleanup(payload);
 
   const categories = await payload.find({
@@ -190,7 +237,8 @@ async function seedDemo() {
     const { tenant, user } = await createAccount(payload, {
       username: store.slug,
       displayName: store.name,
-      palette: store.palette,
+      // Each store's logo is its first product's photo, cropped square.
+      logo: photos[`product:${store.products[0]!.name}`],
       initials: `${store.owner.first[0]}${store.owner.last[0]}`,
     });
     // Sellers on a real deployment finish Stripe onboarding themselves; demo
@@ -202,18 +250,11 @@ async function seedDemo() {
     return { store, tenant, slug: store.slug, user };
   });
 
-  // Generate and upload every product cover up front (in parallel)...
+  // Create every product's cover image record up front (in parallel)...
   const listings = sellers.flatMap((s) => s.store.products.map((p) => ({ ...s, p })));
   const coverIds = new Map<string, string>();
-  await inBatches(listings, 6, async ({ store, tenant, p }) => {
-    const data = await abstractCover(`product:${p.name}`, store.palette);
-    const cover = await uploadImage(
-      payload,
-      data,
-      `${store.slug}-${p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
-      p.name,
-      tenant.id
-    );
+  await inBatches(listings, 6, async ({ tenant, p }) => {
+    const cover = await hostedImage(payload, photos[`product:${p.name}`]!, p.name, tenant.id);
     coverIds.set(p.name, cover.id);
   });
 

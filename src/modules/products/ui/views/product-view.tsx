@@ -7,7 +7,7 @@ import { formatCurrency, generateTenantURL } from "@/lib/utils";
 import { useTRPC } from "@/trpc/client";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { CheckIcon, LinkIcon, StarIcon } from "lucide-react";
-import Image from "next/image";
+import Image from "@/components/media-image";
 import Link from "next/link";
 import { Fragment, useState } from "react";
 import dynamic from "next/dynamic";
@@ -49,6 +49,23 @@ export const ProductView = ({ productId, tenantSlug }: ProductViewProps) => {
             sizes="100vw"
             priority
           />
+          {data.image?.credit?.name && (
+            // Photographer credit, required for Unsplash photos.
+            <p className="absolute bottom-2 right-2 rounded bg-black/55 px-2 py-0.5 text-xs text-white">
+              Photo by{" "}
+              <a href={data.image.credit.url ?? undefined} target="_blank" rel="noopener noreferrer" className="underline">
+                {data.image.credit.name}
+              </a>
+              {data.image.credit.source && (
+                <>
+                  {" "}on{" "}
+                  <a href={data.image.credit.sourceUrl ?? undefined} target="_blank" rel="noopener noreferrer" className="underline">
+                    {data.image.credit.source}
+                  </a>
+                </>
+              )}
+            </p>
+          )}
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-6">
           <div className="col-span-4">
