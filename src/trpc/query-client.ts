@@ -11,9 +11,11 @@ export function makeQueryClient() {
       },
       dehydrate: {
         serializeData: superjson.serialize,
-        shouldDehydrateQuery: (query) =>
-          defaultShouldDehydrateQuery(query) ||
-          query.state.status === 'pending',
+        // Only finished queries. Pages await their prefetches; sending pending
+        // ones let a layout (which renders in parallel with the page) ship a
+        // pending copy of the page's query, making the client suspend and
+        // stream content that was already rendered on the server.
+        shouldDehydrateQuery: defaultShouldDehydrateQuery,
       },
       hydrate: {
         deserializeData: superjson.deserialize,

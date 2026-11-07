@@ -44,6 +44,7 @@ export const SearchInput = ({ disabled, defaultValue, onChange }: Props) => {
       <Button
         variant="elevated"
         className="shrink-0 size-12 flex lg:hidden"
+        aria-label="Browse categories"
         onClick={() => setIsSidebarOpen(true)}
       >
         <ListFilterIcon />

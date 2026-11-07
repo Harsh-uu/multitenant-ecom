@@ -46,6 +46,8 @@ export const ProductView = ({ productId, tenantSlug }: ProductViewProps) => {
             alt={data.name}
             fill
             className="object-cover"
+            sizes="100vw"
+            priority
           />
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-6">
@@ -89,7 +91,7 @@ export const ProductView = ({ productId, tenantSlug }: ProductViewProps) => {
                     iconClassName="size-4"
                   />
                   <p className="text-base font-medium">
-                    {data.reviewCount} ratings
+                    {data.reviewCount} {data.reviewCount === 1 ? "rating" : "ratings"}
                   </p>
                 </div>
               </div>
@@ -99,14 +101,14 @@ export const ProductView = ({ productId, tenantSlug }: ProductViewProps) => {
               <div className="flex items-center gap-2">
                 <StarRating rating={data.reviewRating} iconClassName="size-4" />
                 <p className="text-base font-medium">
-                  {data.reviewCount} ratings
+                  {data.reviewCount} {data.reviewCount === 1 ? "rating" : "ratings"}
                 </p>
               </div>
             </div>
 
             <div className="p-6">
               {data.description ? (
-                <RichText data={data.description}/>
+                <RichText className="rich-text" data={data.description} />
               ) : (
                 <p className="font-medium text-muted-foreground italic">
                   No description provided
@@ -155,7 +157,7 @@ export const ProductView = ({ productId, tenantSlug }: ProductViewProps) => {
                   <div className="flex items-center gap-x-1 font-medium">
                     <StarIcon className="size-4 fill-black" />
                     <p>({data.reviewRating})</p>
-                    <p className="text-base">{data.reviewCount} ratings</p>
+                    <p className="text-base">{data.reviewCount} {data.reviewCount === 1 ? "rating" : "ratings"}</p>
                   </div>
                 </div>
 

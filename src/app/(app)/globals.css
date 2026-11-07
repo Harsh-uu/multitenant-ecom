@@ -120,3 +120,25 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Product descriptions and purchased content (Payload rich text). */
+@layer components {
+  .rich-text {
+    @apply flex flex-col gap-3 text-base leading-relaxed;
+  }
+  .rich-text h2 {
+    @apply text-2xl font-medium mt-2;
+  }
+  .rich-text h3 {
+    @apply text-lg font-medium mt-2;
+  }
+  .rich-text ul {
+    @apply list-disc pl-6 flex flex-col gap-1;
+  }
+  .rich-text ol {
+    @apply list-decimal pl-6 flex flex-col gap-1;
+  }
+  .rich-text a {
+    @apply underline;
+  }
+}

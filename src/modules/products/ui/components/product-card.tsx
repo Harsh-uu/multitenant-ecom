@@ -13,6 +13,7 @@ interface ProductCardProps {
   reviewRating: number;
   reviewCount: number;
   price: number;
+  priority?: boolean;
 }
 
 export const ProductCard = ({
@@ -24,6 +25,7 @@ export const ProductCard = ({
   reviewCount,
   reviewRating,
   imageUrl,
+  priority = false,
 }: ProductCardProps) => {
   const router = useRouter();
 
@@ -41,6 +43,8 @@ export const ProductCard = ({
             fill
             src={imageUrl || "/placeholder.png"}
             className="object-cover"
+            sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, (max-width: 1536px) 33vw, 25vw"
+            priority={priority}
           />
         </div>
         <div className="p-4 border-y flex flex-col gap-3 flex-1">

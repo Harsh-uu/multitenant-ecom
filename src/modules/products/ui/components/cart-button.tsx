@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { appPath, cn } from "@/lib/utils";
 import { useCart } from "@/modules/checkout/hooks/use-cart";
 import Link from "next/link";
 
@@ -19,7 +19,7 @@ export const CartButton = ({ tenantSlug, productId, isPurchased }: Props) => {
         variant="elevated"
         className="flex-1 font-medium bg-white"
       >
-        <Link href={`${process.env.NEXT_PUBLIC_APP_URL}/library/${productId}`}>
+        <Link href={appPath(`/library/${productId}`)}>
           View in Library
         </Link>
       </Button>

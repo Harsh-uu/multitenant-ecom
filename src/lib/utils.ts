@@ -5,19 +5,36 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function generateTenantURL(tenantSlug: string) {
-  const isDevelopment = process.env.NODE_ENV === "development";
-  const isSubdomainRoutingEnabled =
-    process.env.NEXT_PUBLIC_ENABLE_SUBDOMAIN_ROUTING === "true";
+/** The app's base URL without a trailing slash (env values often have one). */
+export function getAppUrl() {
+  return (process.env.NEXT_PUBLIC_APP_URL || "").replace(/\/+$/, "");
+}
 
-  if (isDevelopment || !isSubdomainRoutingEnabled) {
-    return `${process.env.NEXT_PUBLIC_APP_URL}/tenants/${tenantSlug}`;
+const usesSubdomains = () =>
+  process.env.NODE_ENV !== "development" &&
+  process.env.NEXT_PUBLIC_ENABLE_SUBDOMAIN_ROUTING === "true";
+
+/**
+ * Link to a page on the main app. Relative unless stores live on subdomains,
+ * so client-side navigation and prefetching keep working.
+ */
+export function appPath(path: string) {
+  return usesSubdomains() ? `${getAppUrl()}${path}` : path;
+}
+
+/**
+ * Link to a store. Relative (/tenants/slug) unless subdomain routing is on.
+ * Pass { absolute: true } where a full URL is required (e.g. Stripe redirects).
+ */
+export function generateTenantURL(
+  tenantSlug: string,
+  { absolute = false }: { absolute?: boolean } = {}
+) {
+  if (usesSubdomains()) {
+    return `https://${tenantSlug}.${process.env.NEXT_PUBLIC_ROOT_DOMAIN}`;
   }
-
-  let protocol = "https";
-  const domain = process.env.NEXT_PUBLIC_ROOT_DOMAIN!;
-
-  return `${protocol}://${tenantSlug}.${domain}`;
+  const path = `/tenants/${tenantSlug}`;
+  return absolute ? `${getAppUrl()}${path}` : path;
 }
 
 export function formatCurrency(value: number | string) {
