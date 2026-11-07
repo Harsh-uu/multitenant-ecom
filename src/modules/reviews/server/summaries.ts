@@ -39,7 +39,7 @@ export async function getReviewSummaries(
     const entry = totals.get(id);
     summaries.set(id, {
       reviewCount: entry?.count ?? 0,
-      reviewRating: entry ? entry.sum / entry.count : 0,
+      reviewRating: entry ? Math.round((entry.sum / entry.count) * 10) / 10 : 0,
     });
   }
 

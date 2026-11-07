@@ -134,7 +134,7 @@ export const checkoutRouter = createTRPCRouter({
       if (!tenant.stripeDetailsSubmitted && !isUserSuperAdmin) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "Tenant not allowed to sell products",
+          message: "This store can't accept payments yet. Please try again later.",
         });
       }      const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] =
         products.docs.map((product) => ({
@@ -182,18 +182,26 @@ export const checkoutRouter = createTRPCRouter({
 
       let checkout: Stripe.Checkout.Session;
 
-      if (isUserSuperAdmin) {
-        // For superadmin, create a regular checkout session without connecting to tenant's Stripe account
-        checkout = await stripe.checkout.sessions.create(checkoutConfig);
-      } else {
-        // For regular users, create checkout with connected account and platform fee
-        checkout = await stripe.checkout.sessions.create({
-          ...checkoutConfig,
-          payment_intent_data: {
-            application_fee_amount: platformFeeAmount,
-          }
-        }, {
-          stripeAccount: tenant.stripeAccountID,
+      try {
+        if (isUserSuperAdmin) {
+          // For superadmin, create a regular checkout session without connecting to tenant's Stripe account
+          checkout = await stripe.checkout.sessions.create(checkoutConfig);
+        } else {
+          // For regular users, create checkout with connected account and platform fee
+          checkout = await stripe.checkout.sessions.create({
+            ...checkoutConfig,
+            payment_intent_data: {
+              application_fee_amount: platformFeeAmount,
+            }
+          }, {
+            stripeAccount: tenant.stripeAccountID,
+          });
+        }
+      } catch (error) {
+        console.error("Stripe checkout failed", error);
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "This store can't accept payments yet. Please try again later.",
         });
       }
 
