@@ -26,6 +26,9 @@ const nextConfig: NextConfig = {
   experimental: {
     // Tree-shake barrel imports from these packages.
     optimizePackageImports: ["lucide-react", "date-fns", "recharts"],
+    // Inline CSS into the HTML so first paint doesn't wait on a separate
+    // stylesheet request (it was starved by scripts on slow mobile links).
+    inlineCss: true,
   },
 };
 

@@ -39,7 +39,8 @@ const block = (type: string, children: unknown[], extra: object = {}) => ({
   type, children, format: "", indent: 0, version: 1, direction: "ltr", ...extra,
 });
 const paragraph = (t: string) => block("paragraph", [text(t)], { textFormat: 0, textStyle: "" });
-const heading = (t: string) => block("heading", [text(t)], { tag: "h3" });
+// h2: the product name is the page's h1.
+const heading = (t: string) => block("heading", [text(t)], { tag: "h2" });
 const bullets = (items: string[]) =>
   block(
     "list",
