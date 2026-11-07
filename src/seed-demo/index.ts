@@ -12,12 +12,9 @@ import { getPayload, type Payload, type Where } from "payload";
 import config from "@payload-config";
 
 import { stripe } from "../lib/stripe";
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
 
 import { avatar } from "./art";
-import type { PickedPhoto } from "./pick-photos";
+import { PRODUCT_PHOTOS, photoSrc, type DemoPhoto } from "./photos";
 import {
   BUYERS,
   DEMO_EMAIL_DOMAIN,
@@ -63,49 +60,48 @@ async function inBatches<T, R>(items: T[], size: number, fn: (item: T) => Promis
   return out;
 }
 
-async function uploadImage(payload: Payload, data: Buffer, name: string, alt: string, tenant: string) {
+async function uploadImage(
+  payload: Payload, data: Buffer, name: string, alt: string, tenant: string,
+  opts: { mimetype?: string; ext?: string; credit?: object } = {}
+) {
+  const { mimetype = "image/webp", ext = "webp", credit } = opts;
   // A content hash in the filename gives new artwork a new URL, so image
   // optimizer, CDN and browser caches never serve a previous version.
   const version = createHash("sha1").update(data).digest("hex").slice(0, 8);
   return payload.create({
     collection: "media",
-    data: { alt, tenant } as never,
-    file: { data, mimetype: "image/webp", name: `${name}-${version}.webp`, size: data.length },
+    data: { alt, tenant, credit } as never,
+    file: { data, mimetype, name: `${name}-${version}.${ext}`, size: data.length },
   });
 }
 
-// Unsplash photos chosen by pick-photos.ts.
-const photosFile = path.join(path.dirname(fileURLToPath(import.meta.url)), "photos.json");
-const photos: Record<string, PickedPhoto> = fs.existsSync(photosFile)
-  ? JSON.parse(fs.readFileSync(photosFile, "utf8"))
-  : {};
-
-/**
- * Media record pointing at an Unsplash photo. Unsplash's API terms require
- * hotlinking (no re-hosting) and crediting the photographer, so we store
- * the URL and credit rather than uploading a file.
- */
-async function hostedImage(payload: Payload, photo: PickedPhoto, alt: string, tenant: string, square = false) {
-  const url = new URL(photo.url);
-  if (square) {
-    url.searchParams.set("fit", "crop");
-    url.searchParams.set("ar", "1:1");
-    url.searchParams.set("crop", "entropy");
+async function download(url: string) {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`${res.status}`);
+      return Buffer.from(await res.arrayBuffer());
+    } catch (e) {
+      if (attempt >= 4) throw new Error(`Download failed for ${url}: ${(e as Error).message}`);
+      await new Promise((r) => setTimeout(r, 1000 * attempt));
+    }
   }
+}
+
+/** Uploads a demo photo (Unsplash License) with photographer credit. */
+async function photoImage(payload: Payload, photo: DemoPhoto, alt: string, tenant: string, square = false) {
+  const data = await download(square ? photoSrc(photo, 400, 400) : photoSrc(photo, 1600, 1200));
+  const slug = alt.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   const utm = "utm_source=shelf&utm_medium=referral";
-  return payload.create({
-    collection: "media",
-    data: {
-      alt,
-      tenant,
-      externalUrl: url.toString(),
-      credit: {
-        name: photo.photographer,
-        url: `${photo.profileUrl}?${utm}`,
-        source: "Unsplash",
-        sourceUrl: `https://unsplash.com/?${utm}`,
-      },
-    } as never,
+  return uploadImage(payload, data, slug, alt, tenant, {
+    mimetype: "image/jpeg",
+    ext: "jpg",
+    credit: {
+      name: photo.photographer,
+      url: `${photo.photoUrl}?${utm}`,
+      source: "Unsplash",
+      sourceUrl: `https://unsplash.com/?${utm}`,
+    },
   });
 }
 
@@ -115,7 +111,7 @@ async function createStripeAccount() {
 }
 
 async function createAccount(payload: Payload, opts: {
-  username: string; displayName: string; initials: string; logo?: PickedPhoto;
+  username: string; displayName: string; initials: string; logo?: DemoPhoto;
 }) {
   const stripeAccountID = await createStripeAccount();
   const tenant = await payload.create({
@@ -123,7 +119,7 @@ async function createAccount(payload: Payload, opts: {
     data: { name: opts.displayName, slug: opts.username, stripeAccountID },
   });
   const image = opts.logo
-    ? await hostedImage(payload, opts.logo, `${opts.displayName} logo`, tenant.id, true)
+    ? await photoImage(payload, opts.logo, `${opts.displayName} logo`, tenant.id, true)
     : await uploadImage(
         payload,
         await avatar({ initials: opts.initials, color: "#F2F2F2" }),
@@ -209,10 +205,10 @@ async function seedDemo() {
   }
 
   const missing = STORES.flatMap((st) => st.products)
-    .filter((p) => !photos[`product:${p.name}`])
+    .filter((p) => !PRODUCT_PHOTOS[p.name])
     .map((p) => p.name);
   if (missing.length) {
-    throw new Error(`No Unsplash photo picked for: ${missing.join(", ")}. Run src/seed-demo/pick-photos.ts first.`);
+    throw new Error(`No photo listed in photos.ts for: ${missing.join(", ")}`);
   }
 
   await cleanup(payload);
@@ -238,7 +234,7 @@ async function seedDemo() {
       username: store.slug,
       displayName: store.name,
       // Each store's logo is its first product's photo, cropped square.
-      logo: photos[`product:${store.products[0]!.name}`],
+      logo: PRODUCT_PHOTOS[store.products[0]!.name],
       initials: `${store.owner.first[0]}${store.owner.last[0]}`,
     });
     // Sellers on a real deployment finish Stripe onboarding themselves; demo
@@ -254,7 +250,7 @@ async function seedDemo() {
   const listings = sellers.flatMap((s) => s.store.products.map((p) => ({ ...s, p })));
   const coverIds = new Map<string, string>();
   await inBatches(listings, 6, async ({ tenant, p }) => {
-    const cover = await hostedImage(payload, photos[`product:${p.name}`]!, p.name, tenant.id);
+    const cover = await photoImage(payload, PRODUCT_PHOTOS[p.name]!, p.name, tenant.id);
     coverIds.set(p.name, cover.id);
   });
 
