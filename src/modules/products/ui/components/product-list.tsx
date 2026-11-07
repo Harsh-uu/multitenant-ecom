@@ -53,8 +53,9 @@ export const ProductList = ({ category, tenantSlug, narrowView }: Props) => {
       >
         {data?.pages
           .flatMap((page) => page.docs)
-          .map((product) => (
+          .map((product, index) => (
             <ProductCard
+              priority={index < 4}
               key={product.id}
               id={product.id}
               name={product.name}

@@ -37,6 +37,7 @@ export const CheckoutItem = ({
             alt={name}
             fill
             className="object-cover"
+            sizes="120px"
           />
         </div>
       </div>

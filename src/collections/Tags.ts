@@ -1,3 +1,4 @@
+import { revalidateCatalog } from "@/lib/cache";
 import { isSuperAdmin } from "@/lib/access";
 import type { CollectionConfig } from "payload";
 
@@ -8,6 +9,10 @@ export const Tags: CollectionConfig = {
     create: ({ req }) => isSuperAdmin(req.user),
     update: ({ req }) => isSuperAdmin(req.user),
     delete: ({ req }) => isSuperAdmin(req.user),
+  },
+  hooks: {
+    afterChange: [revalidateCatalog],
+    afterDelete: [revalidateCatalog],
   },
   admin: {
     useAsTitle: "name",

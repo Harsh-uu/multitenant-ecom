@@ -1,3 +1,4 @@
+import { revalidateCatalog } from "@/lib/cache";
 import { isSuperAdmin } from "@/lib/access";
 import { Tenant } from "@/payload-types";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
@@ -13,6 +14,10 @@ export const Products: CollectionConfig = {
       return Boolean(tenant?.stripeDetailsSubmitted);
     },
     delete: ({req}) => isSuperAdmin(req.user),
+  },
+  hooks: {
+    afterChange: [revalidateCatalog],
+    afterDelete: [revalidateCatalog],
   },
   admin: {
     useAsTitle: "name",

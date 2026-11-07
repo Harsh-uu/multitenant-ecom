@@ -16,12 +16,12 @@ const Page = async ({ params }: Props) => {
   const { productId } = await params;
   await requireUser();
   const queryClient = getQueryClient();
-  void queryClient.prefetchQuery(
+  await queryClient.prefetchQuery(
     trpc.library.getOne.queryOptions({
       productId,
     })
   );
-  void queryClient.prefetchQuery(
+  await queryClient.prefetchQuery(
     trpc.reviews.getOne.queryOptions({
       productId,
     })

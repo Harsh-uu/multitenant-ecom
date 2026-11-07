@@ -11,7 +11,10 @@ import { getPayload, type Payload, type Where } from "payload";
 import config from "@payload-config";
 
 import { stripe } from "../lib/stripe";
-import { productCover, avatar } from "./art";
+import sharp from "sharp";
+
+import { avatar } from "./art";
+import photos from "./photos.json";
 import {
   BUYERS,
   DEMO_EMAIL_DOMAIN,
@@ -69,6 +72,19 @@ async function createStripeAccount() {
   return account.id;
 }
 
+// CC0 photos from StockSnap (chosen with pick-photos.ts), re-encoded as WebP.
+async function photo(key: string, square = false) {
+  const url = (photos as Record<string, string>)[key];
+  if (!url) return null;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Failed to download ${url}: ${res.status}`);
+  const image = sharp(Buffer.from(await res.arrayBuffer()));
+  return (square
+    ? image.resize(256, 256, { fit: "cover", position: sharp.strategy.attention })
+    : image
+  ).webp({ quality: 80 }).toBuffer();
+}
+
 async function createAccount(payload: Payload, opts: {
   username: string; displayName: string; color: string; initials: string;
 }) {
@@ -79,7 +95,8 @@ async function createAccount(payload: Payload, opts: {
   });
   const image = await uploadImage(
     payload,
-    await avatar({ initials: opts.initials, color: opts.color }),
+    (await photo(`avatar:${opts.username}`, true)) ??
+      (await avatar({ initials: opts.initials, color: opts.color })),
     `avatar-${opts.username}`,
     `${opts.displayName} avatar`,
     tenant.id
@@ -160,8 +177,7 @@ async function seedDemo() {
     tagId.set(name, tag.id);
   }
 
-  // Sellers, their stores and products.
-  const products: { id: string; name: string; storeSlug: string }[] = [];
+  // Sellers and their stores.
   const sellers = await inBatches(STORES, 3, async (store) => {
     const { tenant, user } = await createAccount(payload, {
       username: store.slug,
@@ -175,22 +191,35 @@ async function seedDemo() {
     await payload.update({
       collection: "tenants", id: tenant.id, data: { stripeDetailsSubmitted: true },
     });
+    return { store, tenant, slug: store.slug, user };
+  });
 
-    await inBatches(store.products, 3, async (p) => {
+  // Upload every product photo up front (in parallel)...
+  const listings = sellers.flatMap((s) => s.store.products.map((p) => ({ ...s, p })));
+  const coverIds = new Map<string, string>();
+  await inBatches(listings, 6, async ({ store, tenant, p }) => {
+    const data = await photo(`product:${p.name}`);
+    if (!data) throw new Error(`No photo picked for ${p.name}`);
+    const cover = await uploadImage(
+      payload,
+      data,
+      `${store.slug}-${p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+      p.name,
+      tenant.id
+    );
+    coverIds.set(p.name, cover.id);
+  });
+
+  // ...then create products one store at a time, round-robin, so the
+  // newest-first feed mixes stores instead of showing six from one shop.
+  const products: { id: string; name: string; storeSlug: string }[] = [];
+  const rounds = Math.max(...STORES.map((s) => s.products.length));
+  for (let round = 0; round < rounds; round++) {
+    for (const { store, tenant } of shuffle(sellers)) {
+      const p = store.products[round];
+      if (!p) continue;
       const category = categoryId.get(p.category);
       if (!category) throw new Error(`Unknown category ${p.category}`);
-      const cover = await uploadImage(
-        payload,
-        await productCover({
-          title: p.name,
-          store: store.name,
-          label: p.tags[0]!.replace(/-/g, " "),
-          color: store.color,
-        }),
-        `${store.slug}-${p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
-        p.name,
-        tenant.id
-      );
       const doc = await payload.create({
         collection: "products",
         data: {
@@ -198,7 +227,7 @@ async function seedDemo() {
           price: p.price,
           category,
           tags: p.tags.map((t) => tagId.get(t)!),
-          image: cover.id,
+          image: coverIds.get(p.name)!,
           refundPolicy: p.refundPolicy ?? pick(["30-day", "14-day", "7-day"] as const),
           isPrivate: p.isPrivate ?? false,
           tenant: tenant.id,
@@ -218,10 +247,9 @@ async function seedDemo() {
         } as never,
       });
       if (!p.isPrivate) products.push({ id: doc.id, name: p.name, storeSlug: store.slug });
-    });
-    console.log(`  ✓ ${store.name}: ${store.products.length} products`);
-    return { slug: store.slug, user };
-  });
+    }
+  }
+  console.log(`  ✓ ${sellers.length} stores, ${listings.length} products`);
 
   // Buyers (every account gets a store, like real sign-ups).
   const buyers = await inBatches(BUYERS, 3, async (b) => {

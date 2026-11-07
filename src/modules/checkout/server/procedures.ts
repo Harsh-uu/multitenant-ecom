@@ -4,15 +4,48 @@ import {
   protectedProcedure,
 } from "@/trpc/init";
 import { z } from "zod";
-import type { Sort, Where } from "payload";
-import { Category, Media, Tenant } from "@/payload-types";
-import { DEFAULT_LIMIT, PLATFORM_FEE_PERCENTAGE } from "@/constants";
+import { Media, Tenant } from "@/payload-types";
+import { PLATFORM_FEE_PERCENTAGE } from "@/constants";
 import { TRPCError } from "@trpc/server";
 import type Stripe from "stripe";
 import { CheckoutMetadata, ProductMetadata } from "../types";
 import { stripe } from "@/lib/stripe";
 import { isSuperAdmin } from "@/lib/access";
-import { generateTenantURL } from "@/lib/utils";
+import { generateTenantURL, getAppUrl } from "@/lib/utils";
+import { cachedCatalogQuery } from "@/lib/cache";
+import { getPayload } from "payload";
+import config from "@payload-config";
+
+const getCartProducts = cachedCatalogQuery(
+  "checkout:getProducts",
+  async (ids: string[]) => {
+    const db = await getPayload({ config });
+    return db.find({
+      collection: "products",
+      depth: 2, // Populate "image" and "tenant.image"
+      pagination: false,
+      // Public endpoint: never return the paid "content" field.
+      select: { name: true, price: true, image: true, tenant: true },
+      populate: {
+        tenants: { name: true, slug: true, image: true },
+      },
+      where: {
+        and: [
+          {
+            id: {
+              in: ids,
+            },
+          },
+          {
+            isArchived: {
+              not_equals: true,
+            },
+          },
+        ],
+      },
+    });
+  },
+);
 
 export const checkoutRouter = createTRPCRouter({
   verify: protectedProcedure.mutation(async ({ ctx }) => {
@@ -48,26 +81,26 @@ export const checkoutRouter = createTRPCRouter({
 
     const accountLink = await stripe.accountLinks.create({
       account: tenant.stripeAccountID,
-      refresh_url: `${process.env.NEXT_PUBLIC_APP_URL!}/admin`,
-      return_url: `${process.env.NEXT_PUBLIC_APP_URL!}/admin`,
+      refresh_url: `${getAppUrl()}/admin`,
+      return_url: `${getAppUrl()}/admin`,
       type: "account_onboarding",
     });
 
-    if(!accountLink.url){
+    if (!accountLink.url) {
       throw new TRPCError({
         code: "BAD_REQUEST",
         message: "Failed to create verification link",
-      })
+      });
     }
- 
-    return { url: accountLink.url }
+
+    return { url: accountLink.url };
   }),
   purchase: protectedProcedure
     .input(
       z.object({
         productIds: z.array(z.string()).min(1),
         tenantSlug: z.string().min(1),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const products = await ctx.db.find({
@@ -90,8 +123,8 @@ export const checkoutRouter = createTRPCRouter({
             {
               isArchived: {
                 not_equals: true,
-              }
-            }
+              },
+            },
           ],
         },
       });
@@ -134,9 +167,11 @@ export const checkoutRouter = createTRPCRouter({
       if (!tenant.stripeDetailsSubmitted && !isUserSuperAdmin) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "This store can't accept payments yet. Please try again later.",
+          message:
+            "This store can't accept payments yet. Please try again later.",
         });
-      }      const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] =
+      }
+      const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] =
         products.docs.map((product) => ({
           quantity: 1,
           price_data: {
@@ -154,16 +189,16 @@ export const checkoutRouter = createTRPCRouter({
           },
         }));
 
-        const totalAmount = products.docs.reduce(
-          (acc, item) => acc + item.price * 100, 0  
-        );
+      const totalAmount = products.docs.reduce(
+        (acc, item) => acc + item.price * 100,
+        0,
+      );
 
-        const platformFeeAmount = Math.round(
-          totalAmount * (PLATFORM_FEE_PERCENTAGE / 100)
-        );
+      const platformFeeAmount = Math.round(
+        totalAmount * (PLATFORM_FEE_PERCENTAGE / 100),
+      );
 
-
-      let domain = generateTenantURL(input.tenantSlug);
+      const domain = generateTenantURL(input.tenantSlug, { absolute: true });
 
       // Create different checkout sessions for superadmin vs regular users
       const checkoutConfig: Stripe.Checkout.SessionCreateParams = {
@@ -188,20 +223,24 @@ export const checkoutRouter = createTRPCRouter({
           checkout = await stripe.checkout.sessions.create(checkoutConfig);
         } else {
           // For regular users, create checkout with connected account and platform fee
-          checkout = await stripe.checkout.sessions.create({
-            ...checkoutConfig,
-            payment_intent_data: {
-              application_fee_amount: platformFeeAmount,
-            }
-          }, {
-            stripeAccount: tenant.stripeAccountID,
-          });
+          checkout = await stripe.checkout.sessions.create(
+            {
+              ...checkoutConfig,
+              payment_intent_data: {
+                application_fee_amount: platformFeeAmount,
+              },
+            },
+            {
+              stripeAccount: tenant.stripeAccountID,
+            },
+          );
         }
       } catch (error) {
         console.error("Stripe checkout failed", error);
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "This store can't accept payments yet. Please try again later.",
+          message:
+            "This store can't accept payments yet. Please try again later.",
         });
       }
 
@@ -218,35 +257,12 @@ export const checkoutRouter = createTRPCRouter({
     .input(
       z.object({
         ids: z.array(z.string()),
-      })
+      }),
     )
-    .query(async ({ ctx, input }) => {
-      const data = await ctx.db.find({
-        collection: "products",
-        depth: 2, // Populate "image" and "tenant.image"
-        pagination: false,
-        // Public endpoint: never return the paid "content" field.
-        select: { name: true, price: true, image: true, tenant: true },
-        populate: {
-          tenants: { name: true, slug: true, image: true },
-        },
-        where: {
-          and: [
-            {
-              id: {
-                in: input.ids,
-              },
-            },
-            {
-              isArchived: {
-                not_equals: true,
-              },
-            },
-          ]
-        },
-      });
-
-      if (data.totalDocs !== input.ids.length) {
+    .query(async ({ input }) => {
+      // Sorted so the same cart in any order shares a cache entry.
+      const data = await getCartProducts([...new Set(input.ids)].sort());
+      if (data.totalDocs !== new Set(input.ids).size) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Products not found",

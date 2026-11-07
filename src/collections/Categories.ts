@@ -1,3 +1,4 @@
+import { revalidateCatalog } from "@/lib/cache";
 import { isSuperAdmin } from "@/lib/access";
 import type { CollectionConfig } from "payload";
 import { revalidateTag } from "next/cache";
@@ -8,6 +9,8 @@ const revalidateCategories = () => {
   } catch {
     // Not running inside Next.js (e.g. the seed script); nothing to revalidate.
   }
+  // Category filters are baked into cached product listings too.
+  revalidateCatalog();
 };
 
 export const Categories: CollectionConfig = {
