@@ -3,6 +3,7 @@ import { z } from "zod";
 import { Media, Tenant } from "@/payload-types";
 import { DEFAULT_LIMIT } from "@/constants";
 import { TRPCError } from "@trpc/server";
+import { getReviewSummaries } from "@/modules/reviews/server/summaries";
 
 export const libraryRouter = createTRPCRouter({
   getOne: protectedProcedure
@@ -14,8 +15,10 @@ export const libraryRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const ordersData = await ctx.db.find({
         collection: "orders",
+        depth: 0,
         limit: 1,
         pagination: false,
+        select: {},
         where: {
           and: [
             {
@@ -44,6 +47,7 @@ export const libraryRouter = createTRPCRouter({
       const product = await ctx.db.findByID({
         collection: "products",
         id: input.productId,
+        disableErrors: true,
       })
 
       if(!product){
@@ -61,14 +65,14 @@ export const libraryRouter = createTRPCRouter({
         cursor: z.number().default(1),
         limit: z.number().default(DEFAULT_LIMIT),
       })
-    )    .query(async ({ ctx, input }) => {
-      console.log(`Fetching orders for user: ${ctx.session.user.id}`);
-      
+    )
+    .query(async ({ ctx, input }) => {
       const ordersData = await ctx.db.find({
         collection: "orders",
-        depth: 0, // Populate "category" & "image"
+        depth: 0,
         page: input.cursor,
         limit: input.limit,
+        select: { product: true },
         where: {
           user: {
             equals: ctx.session.user.id,
@@ -76,46 +80,32 @@ export const libraryRouter = createTRPCRouter({
         }
       });
 
-      console.log(`Found ${ordersData.totalDocs} orders for user ${ctx.session.user.id}`);
+      const productIds = ordersData.docs.map((order) =>
+        typeof order.product === "string" ? order.product : order.product.id
+      );
 
-      const productIds = ordersData.docs.map((order) => order.product);
-      console.log(`Product IDs from orders: ${productIds.join(', ')}`);
-
-      const productsData = await ctx.db.find({
-        collection: "products",
-        pagination: false,
-        where: {
-          id: {
-            in: productIds,
-          }
-        }
-      })
-
-      const dataWithSummarizedReviews = await Promise.all(
-        productsData.docs.map(async (doc) => {
-          const reviewsData = await ctx.db.find({
-            collection: "reviews",
-            pagination: false,
-            where: {
-              product: {
-                equals: doc.id,
-              },
+      const [productsData, summaries] = await Promise.all([
+        ctx.db.find({
+          collection: "products",
+          depth: 2, // Populate "image" and "tenant.image"
+          pagination: false,
+          where: {
+            id: {
+              in: productIds,
             },
-          });
+          },
+          select: { name: true, price: true, image: true, tenant: true },
+          populate: {
+            tenants: { name: true, slug: true, image: true },
+          },
+        }),
+        getReviewSummaries(ctx.db, productIds),
+      ]);
 
-          return {
-            ...doc,
-            reviewCount: reviewsData.totalDocs,
-            reviewRating:
-              reviewsData.docs.length === 0
-                ? 0
-                : reviewsData.docs.reduce(
-                    (acc, review) => acc + review.rating,
-                    0
-                  ) / reviewsData.totalDocs,
-          };
-        })
-      )
+      const dataWithSummarizedReviews = productsData.docs.map((doc) => ({
+        ...doc,
+        ...summaries.get(doc.id)!,
+      }));
 
       return {
         ...productsData,

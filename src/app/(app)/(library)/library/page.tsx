@@ -1,3 +1,5 @@
+import { requireUser } from "@/modules/auth/server/require-user";
+import { getNextPageParam } from "@/lib/pagination";
 import { DEFAULT_LIMIT } from "@/constants";
 import { LibraryView } from "@/modules/library/ui/views/library-view";
 import { getQueryClient, trpc } from "@/trpc/server";
@@ -7,11 +9,12 @@ export const dynamic = "force-dynamic";
 
 
 const Page = async () => {
+  await requireUser();
   const queryClient = getQueryClient();
   void queryClient.prefetchInfiniteQuery(
     trpc.library.getMany.infiniteQueryOptions({
       limit: DEFAULT_LIMIT,
-    })
+    }, { getNextPageParam })
   );
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>

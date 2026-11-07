@@ -1,6 +1,5 @@
 // storage-adapter-import-placeholder
 import { mongooseAdapter } from '@payloadcms/db-mongodb'
-import { payloadCloudPlugin } from '@payloadcms/payload-cloud'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import {multiTenantPlugin} from "@payloadcms/plugin-multi-tenant"
 import {vercelBlobStorage} from "@payloadcms/storage-vercel-blob"
@@ -45,7 +44,6 @@ export default buildConfig({
   }),
   sharp,
   plugins: [
-    payloadCloudPlugin(),
     multiTenantPlugin<Config>({
       collections: {
         products: {},
@@ -59,7 +57,9 @@ export default buildConfig({
     vercelBlobStorage({
       enabled: true,
       collections: {
-        media: true,
+        // Serve files straight from the Blob CDN instead of proxying every
+        // image through a Payload serverless function.
+        media: { disablePayloadAccessControl: true },
       },
       token: process.env.BLOB_READ_WRITE_TOKEN,
     }),

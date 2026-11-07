@@ -1,5 +1,6 @@
 import { getPayload } from "payload";
 import config from "@payload-config";
+import { randomBytes } from "crypto";
 import { stripe } from "./lib/stripe";
 
 const categories = [
@@ -138,10 +139,28 @@ const categories = [
   },
 ];
 
+const adminEmail = process.env.SEED_ADMIN_EMAIL || "harsh@admin.com";
+// Never seed a guessable super-admin password; generate one unless provided.
+const adminPassword =
+  process.env.SEED_ADMIN_PASSWORD || randomBytes(12).toString("base64url");
+
 const seed = async () => {
   const payload = await getPayload({ config });
 
-  const adminAccount = await stripe.accounts.create({})
+  const existingAdmin = await payload.count({
+    collection: "users",
+    where: { email: { equals: adminEmail } },
+  });
+  if (existingAdmin.totalDocs > 0) {
+    throw new Error(`Database already seeded (${adminEmail} exists)`);
+  }
+
+  // The admin tenant only needs an account ID; super-admin checkouts don't
+  // use a connected account. Don't let a missing Stripe key block seeding.
+  const adminAccount = await stripe.accounts.create({}).catch((error) => {
+    console.warn(`Stripe unavailable (${error.message}); using a placeholder account ID`);
+    return { id: "acct_placeholder_admin" };
+  });
 
   const adminTenant = await payload.create({
     collection: "tenants",
@@ -155,8 +174,8 @@ const seed = async () => {
   await payload.create({
     collection: "users",
     data:{
-      email: "harsh@admin.com",
-      password: "demo",
+      email: adminEmail,
+      password: adminPassword,
       roles: ["super-admin"],
       username: "admin",
       tenants: [
@@ -195,6 +214,9 @@ const seed = async () => {
 try{
   await seed();
   console.log("Seeding completed successfully");
+  if (!process.env.SEED_ADMIN_PASSWORD) {
+    console.log(`Super-admin: ${adminEmail} / ${adminPassword}`);
+  }
   process.exit(0);
 } catch(error) {
   console.log("Error during seeding:", error);

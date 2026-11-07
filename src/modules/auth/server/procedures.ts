@@ -17,21 +17,32 @@ export const authRouter = createTRPCRouter({
   register: baseProcedure
     .input(registerSchema)
     .mutation(async ({ input, ctx }) => {
-      const existingData = await ctx.db.find({
-        collection: "users",
-        limit: 1,
-        where: {
-          username: {
-            equals: input.username,
-          },
-        },
-      });
+      const [usernameTaken, emailTaken, slugTaken] = await Promise.all([
+        ctx.db.count({
+          collection: "users",
+          where: { username: { equals: input.username } },
+        }),
+        ctx.db.count({
+          collection: "users",
+          where: { email: { equals: input.email.toLowerCase() } },
+        }),
+        ctx.db.count({
+          collection: "tenants",
+          where: { slug: { equals: input.username } },
+        }),
+      ]);
 
-      const existingUser = existingData.docs[0];
-      if (existingUser) {
+      if (usernameTaken.totalDocs > 0 || slugTaken.totalDocs > 0) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Username already taken",
+        });
+      }
+
+      if (emailTaken.totalDocs > 0) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Email already registered",
         });
       }
 
@@ -53,19 +64,28 @@ export const authRouter = createTRPCRouter({
         },
       });
 
-      await ctx.db.create({
-        collection: "users",
-        data: {
-          email: input.email,
-          username: input.username,
-          password: input.password,
-          tenants: [
-            {
-              tenant: tenant.id,
-            },
-          ],
-        },
-      });
+      try {
+        await ctx.db.create({
+          collection: "users",
+          data: {
+            email: input.email,
+            username: input.username,
+            password: input.password,
+            tenants: [
+              {
+                tenant: tenant.id,
+              },
+            ],
+          },
+        });
+      } catch (error) {
+        // Don't leave an orphaned store behind if the user can't be created.
+        await ctx.db
+          .delete({ collection: "tenants", id: tenant.id })
+          .catch(() => {});
+        await stripe.accounts.del(account.id).catch(() => {});
+        throw error;
+      }
       const data = await ctx.db.login({
         collection: "users",
         data: {

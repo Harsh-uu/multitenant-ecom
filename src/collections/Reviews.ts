@@ -23,7 +23,7 @@ export const Reviews: CollectionConfig = {
       type: "number",
       required: true,
       min: 1,
-      max: 3,
+      max: 5,
     },
     {
       name: "product",
@@ -31,6 +31,7 @@ export const Reviews: CollectionConfig = {
       relationTo: "products",
       hasMany: false,
       required: true,
+      index: true,
     },
     {
       name: "user",
@@ -38,6 +39,7 @@ export const Reviews: CollectionConfig = {
       relationTo: "users",
       hasMany: false,
       required: true,
+      index: true,
     },
   ],
 };

@@ -1,3 +1,4 @@
+import { getNextPageParam } from "@/lib/pagination";
 import { DEFAULT_LIMIT } from "@/constants";
 import { loadProductFilters } from "@/modules/products/search-params";
 import { ProductListView } from "@/modules/products/ui/views/product-list-view";
@@ -21,7 +22,7 @@ const Page = async ({params, searchParams}: Props) => {
         ...filters,
         tenantSlug: slug,
         limit: DEFAULT_LIMIT,
-    }))
+    }, { getNextPageParam }))
     return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <ProductListView tenantSlug={slug} narrowView/>

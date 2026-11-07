@@ -6,6 +6,7 @@ import {
 import { z } from "zod";
 import { DEFAULT_LIMIT } from "@/constants";
 import { TRPCError } from "@trpc/server";
+import type { Where } from "payload";
 
 export const reviewsRouter = createTRPCRouter({
   getOne: protectedProcedure
@@ -18,6 +19,9 @@ export const reviewsRouter = createTRPCRouter({
       const product = await ctx.db.findByID({
         collection: "products",
         id: input.productId,
+        depth: 0,
+        select: {},
+        disableErrors: true,
       });
 
       if (!product) {
@@ -29,6 +33,7 @@ export const reviewsRouter = createTRPCRouter({
 
       const reviewsData = await ctx.db.find({
         collection: "reviews",
+        depth: 0,
         limit: 1,
         where: {
           and: [
@@ -67,6 +72,9 @@ export const reviewsRouter = createTRPCRouter({
       const product = await ctx.db.findByID({
         collection: "products",
         id: input.productId,
+        depth: 0,
+        select: {},
+        disableErrors: true,
       });
 
       if (!product) {
@@ -76,19 +84,24 @@ export const reviewsRouter = createTRPCRouter({
         });
       }
 
-      const existingReviewData = await ctx.db.find({
-        collection: "reviews",
-        where: {
-          and: [
-            {
-              product: { equals: input.productId },
-            },
-            {
-              user: { equals: ctx.session.user.id },
-            },
-          ],
-        },
-      });
+      const ownedBy: Where = {
+        and: [
+          { product: { equals: input.productId } },
+          { user: { equals: ctx.session.user.id } },
+        ],
+      };
+      const [purchases, existingReviewData] = await Promise.all([
+        ctx.db.count({ collection: "orders", where: ownedBy }),
+        ctx.db.count({ collection: "reviews", where: ownedBy }),
+      ]);
+
+      if (purchases.totalDocs === 0) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You can only review products you have purchased",
+        });
+      }
+
       if (existingReviewData.totalDocs > 0) {
         throw new TRPCError({
           code: "BAD_REQUEST",
@@ -121,6 +134,7 @@ export const reviewsRouter = createTRPCRouter({
         depth: 0,
         collection: "reviews",
         id: input.reviewId,
+        disableErrors: true,
       });
 
       if (!existingReview) {
