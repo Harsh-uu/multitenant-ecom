@@ -1,4 +1,5 @@
 // Demo catalogue used by src/seed-demo/index.ts. Everything here is fictional.
+import type { PaletteName } from "./art";
 
 export type DemoProduct = {
   name: string;
@@ -15,7 +16,7 @@ export type DemoStore = {
   slug: string;
   name: string;
   owner: { first: string; last: string };
-  color: string;
+  palette: PaletteName;
   products: DemoProduct[];
 };
 
@@ -42,7 +43,7 @@ export const STORES: DemoStore[] = [
     slug: "pixelcraft",
     name: "Pixel Craft Studio",
     owner: { first: "Lena", last: "Fischer" },
-    color: "#B5B9FF",
+    palette: "dusk",
     products: [
       { name: "Figma UI Kit Pro", category: "ui-ux", price: 49, tags: ["template", "bestseller"], blurb: "A complete, auto-layout Figma design system with 600+ components, light and dark themes and responsive variants.", includes: ["600+ components with variants", "Light and dark themes", "Auto-layout everywhere", "Free lifetime updates"] },
       { name: "Mobile App Wireframe Pack", category: "ui-ux", price: 24, tags: ["template", "beginner-friendly"], blurb: "Over 180 low-fidelity screens to map out iOS and Android flows in minutes, not days.", includes: ["180+ wireframe screens", "Onboarding, checkout and settings flows", "Figma and Sketch files"] },
@@ -56,7 +57,7 @@ export const STORES: DemoStore[] = [
     slug: "codewithmaya",
     name: "Code with Maya",
     owner: { first: "Maya", last: "Patel" },
-    color: "#7EC8E3",
+    palette: "ocean",
     products: [
       { name: "Next.js Production Playbook", category: "web-development", price: 59, tags: ["ebook", "advanced", "bestseller"], blurb: "Everything I learned shipping Next.js apps to millions of users: caching, data fetching, auth and deployment.", includes: ["220-page ebook (PDF and EPUB)", "Companion GitHub repo", "Deployment checklist"] },
       { name: "TypeScript from Zero", category: "programming-languages", price: 39, tags: ["video-course", "beginner-friendly"], blurb: "A friendly, project-based video course that takes you from JavaScript to confident TypeScript.", includes: ["6 hours of video", "40 exercises with solutions", "Certificate of completion"] },
@@ -70,7 +71,7 @@ export const STORES: DemoStore[] = [
     slug: "moneymindset",
     name: "Money Mindset",
     owner: { first: "Daniel", last: "Okafor" },
-    color: "#FFB347",
+    palette: "citrus",
     products: [
       { name: "Personal Budget Spreadsheet", category: "personal-finance", price: 19, tags: ["template", "bestseller", "beginner-friendly"], blurb: "A zero-based budgeting spreadsheet that tracks spending, savings goals and net worth automatically.", includes: ["Google Sheets and Excel versions", "Net worth tracker", "Video walkthrough"] },
       { name: "Index Investing Guide", category: "investing", price: 29, tags: ["ebook", "beginner-friendly"], blurb: "A plain-English guide to building a low-cost, diversified portfolio and sticking with it.", includes: ["140-page ebook", "Portfolio rebalancing calculator"] },
@@ -84,7 +85,7 @@ export const STORES: DemoStore[] = [
     slug: "inkandquill",
     name: "Ink & Quill",
     owner: { first: "Sofia", last: "Marino" },
-    color: "#D8B5FF",
+    palette: "blush",
     products: [
       { name: "Novel Outlining Workbook", category: "fiction", price: 22, tags: ["printable", "beginner-friendly", "bestseller"], blurb: "Plot your novel scene by scene with worksheets for structure, character arcs and subplots.", includes: ["60-page printable workbook", "Scrivener template"] },
       { name: "Copywriting Swipe File", category: "copywriting", price: 39, tags: ["toolkit", "bestseller"], blurb: "500 high-converting headlines, emails and landing page sections, organised by goal.", includes: ["500+ annotated examples", "Searchable Notion database"] },
@@ -98,7 +99,7 @@ export const STORES: DemoStore[] = [
     slug: "lensandlight",
     name: "Lens & Light",
     owner: { first: "Kenji", last: "Tanaka" },
-    color: "#FF6B6B",
+    palette: "sunset",
     products: [
       { name: "Moody Film Lightroom Presets", category: "portrait", price: 19, tags: ["presets", "bestseller"], blurb: "Twenty presets inspired by Portra and Ektar film stocks, tuned for skin tones.", includes: ["20 Lightroom presets", "Mobile DNG versions", "Install guide"] },
       { name: "Landscape Masterclass", category: "landscape", price: 69, tags: ["video-course", "advanced"], blurb: "Plan, shoot and edit epic landscapes with field lessons from Iceland, Patagonia and the Alps.", includes: ["9 hours of video", "RAW files to practise on", "Editing walkthroughs"] },
@@ -112,7 +113,7 @@ export const STORES: DemoStore[] = [
     slug: "beatlab",
     name: "Beat Lab",
     owner: { first: "Marcus", last: "Reed" },
-    color: "#FFD700",
+    palette: "aurora",
     products: [
       { name: "Lo-Fi Drum Sample Pack", category: "music-production", price: 25, tags: ["bundle", "bestseller"], blurb: "800 dusty, vinyl-sampled drum hits and loops for lo-fi and boom-bap beats.", includes: ["800 WAV samples", "40 drum loops", "Royalty-free licence"] },
       { name: "Songwriting Bootcamp", category: "songwriting", price: 55, tags: ["video-course", "beginner-friendly"], blurb: "Write a complete song every week for six weeks, with feedback-ready assignments.", includes: ["6-week video course", "Lyric and melody worksheets"] },
@@ -126,7 +127,7 @@ export const STORES: DemoStore[] = [
     slug: "fitwithraj",
     name: "Fit with Raj",
     owner: { first: "Raj", last: "Malhotra" },
-    color: "#FF9AA2",
+    palette: "ember",
     products: [
       { name: "12-Week Strength Program", category: "workout-plans", price: 49, tags: ["bestseller", "advanced"], blurb: "A progressive barbell program with video demos for every lift and an auto-adjusting log.", includes: ["12-week plan", "Exercise video library", "Progress tracker"] },
       { name: "Home Workout Plan", category: "workout-plans", price: 19, tags: ["beginner-friendly", "printable"], blurb: "No gym, no problem: 30-minute bodyweight workouts for busy weeks.", includes: ["8-week printable plan", "Follow-along videos"] },
@@ -140,7 +141,7 @@ export const STORES: DemoStore[] = [
     slug: "calmcollective",
     name: "Calm Collective",
     owner: { first: "Ava", last: "Nguyen" },
-    color: "#96E6B3",
+    palette: "mint",
     products: [
       { name: "Notion Life OS", category: "productivity", price: 39, tags: ["template", "bestseller"], blurb: "One Notion workspace for goals, habits, projects, notes and journaling.", includes: ["Notion template", "Setup video", "Weekly review guide"] },
       { name: "Deep Work Planner", category: "productivity", price: 15, tags: ["printable", "template"], blurb: "A daily planner built around time-blocking and focus sessions.", includes: ["Printable PDF", "GoodNotes version"] },
@@ -154,7 +155,7 @@ export const STORES: DemoStore[] = [
     slug: "brushstrokes",
     name: "Brush Strokes Academy",
     owner: { first: "Clara", last: "Jensen" },
-    color: "#FFCAB0",
+    palette: "sand",
     products: [
       { name: "Watercolor Botanicals Course", category: "watercolor", price: 45, tags: ["video-course", "beginner-friendly", "bestseller"], blurb: "Paint loose, luminous flowers and leaves in ten relaxed real-time lessons.", includes: ["10 video lessons", "Printable line drawings", "Supply list"] },
       { name: "Acrylic Landscapes Workshop", category: "acrylic", price: 39, tags: ["video-course"], blurb: "Paint dramatic skies, mountains and water with a limited acrylic palette.", includes: ["6 real-time paint-alongs", "Reference photos"] },
@@ -168,7 +169,7 @@ export const STORES: DemoStore[] = [
     slug: "learnloop",
     name: "LearnLoop",
     owner: { first: "Omar", last: "Haddad" },
-    color: "#FFE066",
+    palette: "lagoon",
     products: [
       { name: "Spanish in 30 Days", category: "language-learning", price: 35, tags: ["video-course", "beginner-friendly", "bestseller"], blurb: "Daily 20-minute lessons that get you holding real conversations in a month.", includes: ["30 video lessons", "Audio flashcards", "Workbook"] },
       { name: "SAT Math Prep Bundle", category: "test-preparation", price: 49, tags: ["bundle", "advanced"], blurb: "Practice tests, video solutions and a study plan for a 750+ math score.", includes: ["6 full practice tests", "Video solutions", "8-week study plan"] },

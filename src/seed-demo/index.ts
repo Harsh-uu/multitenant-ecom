@@ -7,14 +7,12 @@
  * @example.com accounts and their products/orders/reviews/media), never real
  * users' data.
  */
+import { createHash } from "crypto";
 import { getPayload, type Payload, type Where } from "payload";
 import config from "@payload-config";
 
 import { stripe } from "../lib/stripe";
-import sharp from "sharp";
-
-import { avatar } from "./art";
-import photos from "./photos.json";
+import { abstractAvatar, abstractCover, avatar, type PaletteName } from "./art";
 import {
   BUYERS,
   DEMO_EMAIL_DOMAIN,
@@ -60,10 +58,13 @@ async function inBatches<T, R>(items: T[], size: number, fn: (item: T) => Promis
 }
 
 async function uploadImage(payload: Payload, data: Buffer, name: string, alt: string, tenant: string) {
+  // A content hash in the filename gives new artwork a new URL, so image
+  // optimizer, CDN and browser caches never serve a previous version.
+  const version = createHash("sha1").update(data).digest("hex").slice(0, 8);
   return payload.create({
     collection: "media",
     data: { alt, tenant } as never,
-    file: { data, mimetype: "image/webp", name: `${name}.webp`, size: data.length },
+    file: { data, mimetype: "image/webp", name: `${name}-${version}.webp`, size: data.length },
   });
 }
 
@@ -72,21 +73,8 @@ async function createStripeAccount() {
   return account.id;
 }
 
-// CC0 photos from StockSnap (chosen with pick-photos.ts), re-encoded as WebP.
-async function photo(key: string, square = false) {
-  const url = (photos as Record<string, string>)[key];
-  if (!url) return null;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Failed to download ${url}: ${res.status}`);
-  const image = sharp(Buffer.from(await res.arrayBuffer()));
-  return (square
-    ? image.resize(256, 256, { fit: "cover", position: sharp.strategy.attention })
-    : image
-  ).webp({ quality: 80 }).toBuffer();
-}
-
 async function createAccount(payload: Payload, opts: {
-  username: string; displayName: string; color: string; initials: string;
+  username: string; displayName: string; initials: string; palette?: PaletteName;
 }) {
   const stripeAccountID = await createStripeAccount();
   const tenant = await payload.create({
@@ -95,8 +83,9 @@ async function createAccount(payload: Payload, opts: {
   });
   const image = await uploadImage(
     payload,
-    (await photo(`avatar:${opts.username}`, true)) ??
-      (await avatar({ initials: opts.initials, color: opts.color })),
+    opts.palette
+      ? await abstractAvatar(opts.username, opts.palette, opts.displayName[0]!.toUpperCase())
+      : await avatar({ initials: opts.initials, color: "#F4F4F0" }),
     `avatar-${opts.username}`,
     `${opts.displayName} avatar`,
     tenant.id
@@ -145,6 +134,24 @@ async function cleanup(payload: Payload) {
   console.log(`Removed previous demo data: ${tenantIds.length} stores, ${userIds.length} users, ${productIds.length} products`);
 }
 
+// The seed writes straight to the database, so tell running apps to drop
+// their cached catalogue (see src/app/(app)/api/revalidate/route.ts).
+async function revalidateDeployments() {
+  const secret = process.env.REVALIDATE_SECRET;
+  const urls = (process.env.REVALIDATE_URLS || process.env.NEXT_PUBLIC_APP_URL || "")
+    .split(",").map((u) => u.trim().replace(/\/+$/, "")).filter(Boolean);
+  if (!secret || urls.length === 0) {
+    console.log("Set REVALIDATE_SECRET (and REVALIDATE_URLS) to refresh cached pages; otherwise they update within 10 minutes.");
+    return;
+  }
+  for (const url of urls) {
+    const res = await fetch(`${url}/api/revalidate`, {
+      method: "POST", headers: { Authorization: `Bearer ${secret}` },
+    }).catch((e: Error) => ({ ok: false, status: e.message }) as const);
+    console.log(`Revalidate ${url}: ${res.ok ? "ok" : `failed (${res.status})`}`);
+  }
+}
+
 async function seedDemo() {
   const payload = await getPayload({ config });
 
@@ -182,7 +189,7 @@ async function seedDemo() {
     const { tenant, user } = await createAccount(payload, {
       username: store.slug,
       displayName: store.name,
-      color: store.color,
+      palette: store.palette,
       initials: `${store.owner.first[0]}${store.owner.last[0]}`,
     });
     // Sellers on a real deployment finish Stripe onboarding themselves; demo
@@ -194,12 +201,11 @@ async function seedDemo() {
     return { store, tenant, slug: store.slug, user };
   });
 
-  // Upload every product photo up front (in parallel)...
+  // Generate and upload every product cover up front (in parallel)...
   const listings = sellers.flatMap((s) => s.store.products.map((p) => ({ ...s, p })));
   const coverIds = new Map<string, string>();
   await inBatches(listings, 6, async ({ store, tenant, p }) => {
-    const data = await photo(`product:${p.name}`);
-    if (!data) throw new Error(`No photo picked for ${p.name}`);
+    const data = await abstractCover(`product:${p.name}`, store.palette);
     const cover = await uploadImage(
       payload,
       data,
@@ -256,7 +262,6 @@ async function seedDemo() {
     const { user } = await createAccount(payload, {
       username: b.username,
       displayName: `${b.first}'s store`,
-      color: "#F4F4F0",
       initials: `${b.first[0]}${b.last[0]}`,
     });
     return { slug: b.username, user };
@@ -300,6 +305,7 @@ async function seedDemo() {
   }
   console.log(`Created ${sellers.length} stores, ${products.length} public products, ${buyers.length} buyers, ${orderCount} orders, ${reviewCount} reviews`);
   console.log(`All demo accounts use the password "${DEMO_PASSWORD}"`);
+  await revalidateDeployments();
 }
 
 try {
